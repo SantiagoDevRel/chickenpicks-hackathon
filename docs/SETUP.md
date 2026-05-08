@@ -159,7 +159,7 @@ Free tier gives ~10k characters/month — sufficient for demo + a few rehearsals
 
 1. Go to https://elevenlabs.io and sign up.
 2. Profile menu → **API keys** → create a new key. Copy it. This is `ELEVENLABS_API_KEY`.
-3. Sidebar → **Conversational AI** → **Agents** → **Create agent**.
+3. Sidebar → **Conversational AI** (also called "Eleven Agents") → **Agents** → **Create agent**.
    - Name: `ChickenPicks Coach`
    - Voice: pick **Brian** or **Bill** (we can swap on Day 3).
    - LLM: leave default (likely Gemini Flash 1.5 or GPT-4o-mini).
@@ -179,6 +179,8 @@ Free tier gives ~10k characters/month — sufficient for demo + a few rehearsals
    - Tools: leave empty for now — wired in Day 1/2.
 4. Save. Copy the **Agent ID** from the agent's settings page. This is `ELEVENLABS_AGENT_ID`.
 5. **Paste API key + Agent ID into chat.**
+
+> ℹ️ **R3 verified (Day 0)**: the JS SDK we'll use is the official `@elevenlabs/react` package (with `ConversationProvider` + `useConversation` hook). Server-side, we'll mint a signed connect URL with `@elevenlabs/client` so the API key never reaches the browser.
 
 ✅ **Done when**: agent exists in dashboard, API key + Agent ID pasted in chat.
 
