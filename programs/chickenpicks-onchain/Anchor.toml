@@ -7,13 +7,13 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-chickenpicks_onchain = "ChickPicks111111111111111111111111111111111"
+chickenpicks_onchain = "Cdd53o33BTaZcmpZ55TemGPmZRR2mbMiYDEU6Mecb3ut"
 
 [programs.devnet]
-chickenpicks_onchain = "ChickPicks111111111111111111111111111111111"
+chickenpicks_onchain = "Cdd53o33BTaZcmpZ55TemGPmZRR2mbMiYDEU6Mecb3ut"
 
 [programs.mainnet]
-chickenpicks_onchain = "ChickPicks111111111111111111111111111111111"
+chickenpicks_onchain = "Cdd53o33BTaZcmpZ55TemGPmZRR2mbMiYDEU6Mecb3ut"
 
 [registry]
 url = "https://api.apr.dev"

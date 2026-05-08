@@ -22,7 +22,7 @@ use state::*;
 // Placeholder. Replace with the pubkey from `solana address -k keys/program.json`
 // after generating keypairs (docs/SETUP.md §5). Must match all three Anchor.toml
 // [programs.*] entries and NEXT_PUBLIC_PROGRAM_ID.
-declare_id!("ChickPicks111111111111111111111111111111111");
+declare_id!("Cdd53o33BTaZcmpZ55TemGPmZRR2mbMiYDEU6Mecb3ut");
 
 #[program]
 pub mod chickenpicks_onchain {

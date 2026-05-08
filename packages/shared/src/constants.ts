@@ -9,7 +9,7 @@ export const SOLANA_RPC_URL =
 //   - all 3 [programs.*] entries in Anchor.toml
 //   - NEXT_PUBLIC_PROGRAM_ID in .env
 export const PROGRAM_ID =
-  process.env.NEXT_PUBLIC_PROGRAM_ID ?? 'ChickPicks111111111111111111111111111111111';
+  process.env.NEXT_PUBLIC_PROGRAM_ID ?? 'Cdd53o33BTaZcmpZ55TemGPmZRR2mbMiYDEU6Mecb3ut';
 
 // USDC mint addresses
 export const USDC_MINT_DEVNET = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr'; // Circle devnet

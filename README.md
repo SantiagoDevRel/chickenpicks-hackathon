@@ -13,8 +13,8 @@ Built for **Dev3pack Global Hackathon** (May 2026).
 
 | Account | Address |
 |---|---|
-| Program ID | `<filled in after anchor deploy>` |
-| Platform Treasury | `<filled in after solana-keygen>` |
+| Program ID | `Cdd53o33BTaZcmpZ55TemGPmZRR2mbMiYDEU6Mecb3ut` |
+| Platform Treasury | `76QkvEWDpRW3PnLVz2wctcFJm9dAsXquHTEkwSxxq31H` |
 | USDC mint (devnet) | `Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr` |
 
 ---
