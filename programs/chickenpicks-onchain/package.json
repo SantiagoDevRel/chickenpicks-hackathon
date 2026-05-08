@@ -1,0 +1,24 @@
+{
+  "name": "chickenpicks-onchain-tests",
+  "version": "0.0.1",
+  "description": "Anchor TS tests — runs via `anchor test` from this directory",
+  "private": true,
+  "scripts": {
+    "lint": "eslint --ext .ts tests/",
+    "lint:fix": "eslint --ext .ts tests/ --fix"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.0",
+    "@solana/spl-token": "^0.4.9",
+    "@solana/web3.js": "^1.95.4"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.0",
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^10.0.0",
+    "chai": "^4.3.4",
+    "mocha": "^10.0.0",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.7.2"
+  }
+}

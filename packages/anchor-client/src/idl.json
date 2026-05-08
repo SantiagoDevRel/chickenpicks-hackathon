@@ -1,0 +1,9 @@
+{
+  "version": "0.1.0",
+  "name": "chickenpicks_onchain",
+  "_placeholder": "This IDL is regenerated automatically by `anchor build`. The real artifact is target/idl/chickenpicks_onchain.json — copy or symlink it here after each build. The shape below is intentionally empty so TypeScript files that import './idl.json' compile while waiting for the real IDL.",
+  "instructions": [],
+  "accounts": [],
+  "types": [],
+  "errors": []
+}
