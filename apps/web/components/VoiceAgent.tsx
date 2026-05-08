@@ -45,10 +45,21 @@ const READ_ONLY_WALLET = {
 
 /**
  * Floating "Talk to Coach" button that connects to the ElevenLabs
- * Conversational AI agent. Read-only client tools for v1: list_pollas,
- * get_user_balance. submit_prediction (write) wired in next iteration.
+ * Conversational AI agent. Client tools:
+ *   - list_pools, get_pool_details, get_user_balance (read-only)
+ *   - submit_picks: opens a confirm modal in the parent page; on confirm
+ *     the parent signs + submits, then the resolver returns to the agent.
+ *     Confirmation step protects against voice misrecognition.
  */
-export function VoiceAgent({ pollaPubkey }: { pollaPubkey?: string }) {
+export function VoiceAgent({
+  pollaPubkey,
+  onVoiceSubmitPicks,
+}: {
+  pollaPubkey?: string;
+  onVoiceSubmitPicks?: (
+    scores: { home: number; away: number }[],
+  ) => Promise<{ ok: boolean; sig?: string; error?: string }>;
+}) {
   const { wallets } = useSolanaWallets();
   const wallet = wallets[0];
   const [error, setError] = useState<string | null>(null);
@@ -122,6 +133,28 @@ export function VoiceAgent({ pollaPubkey }: { pollaPubkey?: string }) {
             settled: m.settled,
           })),
         };
+      },
+
+      // ─── submit_picks: voice → confirm modal → on-chain submit ─────────
+      // The agent passes an array of {home, away} scores. The parent page
+      // owns the modal + signing flow; we just dispatch + await its result.
+      submit_picks: async ({
+        scores,
+      }: {
+        scores: { home: number; away: number }[];
+      }) => {
+        if (!onVoiceSubmitPicks) {
+          return {
+            status: 'error',
+            error:
+              'Submit not available on this page. Open a specific pool to make picks.',
+          };
+        }
+        const result = await onVoiceSubmitPicks(scores);
+        if (result.ok) {
+          return { status: 'submitted', tx_signature: result.sig };
+        }
+        return { status: 'cancelled', error: result.error };
       },
 
       // ─── get_user_balance: SOL + USDC of the connected user ─────────────

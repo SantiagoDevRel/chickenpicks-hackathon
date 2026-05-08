@@ -25,6 +25,11 @@ import {
 } from '@chickenpicks/shared';
 import { BrandHeader } from '@/components/BrandHeader';
 import { VoiceAgent } from '@/components/VoiceAgent';
+import {
+  PicksConfirmModal,
+  type ConfirmState,
+  type ProposedPick,
+} from '@/components/PicksConfirmModal';
 
 const programId = new PublicKey(PROGRAM_ID);
 const usdcMintKey = new PublicKey(USDC_MINT);
@@ -401,6 +406,134 @@ export default function PollaDetailPage() {
     }
   }
 
+  // ─── Voice → confirm modal → submit_prediction flow ────────────────────
+  const [confirmState, setConfirmState] = useState<ConfirmState>({ kind: 'idle' });
+  // The submit_prediction voice tool returns a Promise that resolves once the
+  // user confirms or cancels in the modal. We stash the resolver here.
+  const voiceResolverRef = useRef<
+    ((result: { ok: boolean; sig?: string; error?: string }) => void) | null
+  >(null);
+
+  const handleVoiceSubmit = useCallback(
+    async (
+      voiceScores: { home: number; away: number }[],
+    ): Promise<{ ok: boolean; sig?: string; error?: string }> => {
+      // Need polla + matches loaded + user authenticated
+      if (!polla || matches.length === 0) {
+        return { ok: false, error: 'Pool not loaded yet — try again in a moment.' };
+      }
+      if (!authenticated || !userPubkey || !prediction) {
+        return {
+          ok: false,
+          error: 'Please join the pool first before saving picks by voice.',
+        };
+      }
+      // Pad / truncate to match count
+      const proposed: ProposedPick[] = matches.map((m, i) => {
+        const v = voiceScores[i];
+        return {
+          matchIndex: i,
+          home: decodeFixedString(m.homeTeam),
+          away: decodeFixedString(m.awayTeam),
+          homeScore: v && Number.isFinite(v.home) ? v.home : 0,
+          awayScore: v && Number.isFinite(v.away) ? v.away : 0,
+        };
+      });
+      setConfirmState({ kind: 'open', picks: proposed });
+      return new Promise((resolve) => {
+        voiceResolverRef.current = resolve;
+      });
+    },
+    [polla, matches, authenticated, userPubkey, prediction],
+  );
+
+  async function confirmVoicePicks() {
+    if (confirmState.kind !== 'open' && confirmState.kind !== 'error') return;
+    const picks = confirmState.picks;
+    setConfirmState({ kind: 'busy' });
+
+    // Sync the visible inputs so the page reflects the picks too
+    const newScores = matches.map((_, i) => {
+      const p = picks.find((pp) => pp.matchIndex === i);
+      return p
+        ? { home: p.homeScore.toString(), away: p.awayScore.toString() }
+        : { home: '', away: '' };
+    });
+    setScores(newScores);
+
+    try {
+      // Reuse submitPrediction but with explicit scores (it reads from
+      // the `scores` state we just set, but state may not be flushed yet,
+      // so build the payload directly).
+      if (!pollaPubkey || !polla || !wallet || !userPubkey) {
+        throw new Error('Not ready');
+      }
+      const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adaptedWallet: any = {
+        publicKey: userPubkey,
+        signTransaction: async (tx: unknown) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return await (wallet as any).signTransaction(tx);
+        },
+        signAllTransactions: async (txs: unknown[]) => {
+          return Promise.all(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            txs.map((tx) => (wallet as any).signTransaction(tx)),
+          );
+        },
+      };
+      const provider = new AnchorProvider(conn, adaptedWallet, {
+        commitment: 'confirmed',
+      });
+      const program = new Program(idl as Idl, provider);
+      const [predPda] = PublicKey.findProgramAddressSync(
+        [
+          new TextEncoder().encode('prediction'),
+          pollaPubkey.toBuffer(),
+          userPubkey.toBuffer(),
+        ],
+        programId,
+      );
+      const fullScores: { home: number; away: number }[] = [];
+      for (let i = 0; i < 10; i++) {
+        const p = picks.find((pp) => pp.matchIndex === i);
+        if (p) {
+          fullScores.push({ home: p.homeScore, away: p.awayScore });
+        } else {
+          fullScores.push({ home: -1, away: -1 });
+        }
+      }
+
+      const sig = await program.methods
+        .submitPrediction(fullScores)
+        .accounts({
+          polla: pollaPubkey,
+          prediction: predPda,
+          predictor: userPubkey,
+        })
+        .rpc();
+
+      setLastSig(sig);
+      setConfirmState({ kind: 'idle' });
+      refreshAll();
+      voiceResolverRef.current?.({ ok: true, sig });
+      voiceResolverRef.current = null;
+    } catch (e) {
+      const msg = (e as Error).message;
+      setConfirmState({ kind: 'error', picks, message: msg });
+      // Don't resolve yet — let user retry or cancel
+    }
+  }
+
+  function cancelVoicePicks() {
+    if (voiceResolverRef.current) {
+      voiceResolverRef.current({ ok: false, error: 'User cancelled.' });
+      voiceResolverRef.current = null;
+    }
+    setConfirmState({ kind: 'idle' });
+  }
+
   // Compute payout preview when settled + ranked. Mirrors the on-chain math
   // in claim_prize: denominator is the sum of prize tiers that actually have
   // a ranked participant (so a 1-player polla on a 3-tier distribution still
@@ -437,8 +570,18 @@ export default function PollaDetailPage() {
 
       {/* Floating voice agent button */}
       <div className="fixed bottom-6 right-6 z-40">
-        <VoiceAgent pollaPubkey={pollaPubkey?.toBase58()} />
+        <VoiceAgent
+          pollaPubkey={pollaPubkey?.toBase58()}
+          onVoiceSubmitPicks={handleVoiceSubmit}
+        />
       </div>
+
+      {/* Confirmation modal triggered by the voice agent's submit_picks tool */}
+      <PicksConfirmModal
+        state={confirmState}
+        onConfirm={confirmVoicePicks}
+        onCancel={cancelVoicePicks}
+      />
 
       <div className="mx-auto max-w-3xl px-4 py-8">
         <Link
