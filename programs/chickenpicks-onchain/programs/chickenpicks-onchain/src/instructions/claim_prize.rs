@@ -62,10 +62,24 @@ pub fn handler(ctx: Context<ClaimPrize>) -> Result<()> {
         .checked_div(10_000)
         .ok_or(ChickenPicksError::NumericalOverflow)?;
 
+    // Effective denominator: only sum the prize_distribution slots that actually
+    // have a ranked predictor. If 1 player joined a polla designed for 3 prize
+    // tiers, that single player still wins 100% of pool_after_fee instead of
+    // leaving the rest orphaned. Distribution slot at index i is "filled" only
+    // when there's a participant at rank i — so we cap at num_participants.
+    let active = (polla.num_participants as usize).min(MAX_PRIZE_TIERS);
+    let mut denom: u64 = 0;
+    for i in 0..active {
+        denom = denom
+            .checked_add(polla.prize_distribution[i] as u64)
+            .ok_or(ChickenPicksError::NumericalOverflow)?;
+    }
+    require!(denom > 0, ChickenPicksError::InvalidPrizeDistribution);
+
     let payout = pool_after_fee
         .checked_mul(share_pct)
         .ok_or(ChickenPicksError::NumericalOverflow)?
-        .checked_div(100)
+        .checked_div(denom)
         .ok_or(ChickenPicksError::NumericalOverflow)?;
 
     // Transfer from vault → predictor. Polla PDA signs.

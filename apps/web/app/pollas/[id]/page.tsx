@@ -400,17 +400,23 @@ export default function PollaDetailPage() {
     }
   }
 
-  // Compute payout preview when settled + ranked
+  // Compute payout preview when settled + ranked. Mirrors the on-chain math
+  // in claim_prize: denominator is the sum of prize tiers that actually have
+  // a ranked participant (so a 1-player polla on a 3-tier distribution still
+  // pays 100% of pool-after-fee to rank 0).
   const payoutPreview = useMemo(() => {
     if (!polla || !prediction) return null;
     if (statusKey(polla.status) !== 'SETTLED') return null;
     if (prediction.finalRank === 0xff) return null;
     const sharePct = polla.prizeDistribution[prediction.finalRank] ?? 0;
     if (sharePct === 0) return null;
-    // pool_after_fee = total_pool * 9500 / 10000
     const poolAfterFee = polla.totalPool.muln(9500).divn(10000);
-    const payout = poolAfterFee.muln(sharePct).divn(100);
-    return { sharePct, payout };
+    const active = Math.min(polla.numParticipants, polla.prizeDistribution.length);
+    let denom = 0;
+    for (let i = 0; i < active; i++) denom += polla.prizeDistribution[i];
+    if (denom === 0) return null;
+    const payout = poolAfterFee.muln(sharePct).divn(denom);
+    return { sharePct, payout, denom };
   }, [polla, prediction]);
 
   if (!pollaPubkey) {
