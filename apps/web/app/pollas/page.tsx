@@ -5,7 +5,12 @@ import { useEffect, useState } from 'react';
 import { AnchorProvider, BN, Program } from '@coral-xyz/anchor';
 import { Connection, PublicKey } from '@solana/web3.js';
 import idl from '@chickenpicks/anchor-client/idl' with { type: 'json' };
-import { PROGRAM_ID, SOLANA_RPC_URL, USDC_DECIMALS } from '@chickenpicks/shared';
+import {
+  PROGRAM_ID,
+  SOLANA_RPC_URL,
+  USDC_DECIMALS,
+  USDC_MINT,
+} from '@chickenpicks/shared';
 import { BrandHeader } from '@/components/BrandHeader';
 
 type RawPolla = {
@@ -13,6 +18,7 @@ type RawPolla = {
   name: number[];
   tournament: number[];
   entryAmount: BN;
+  usdcMint: PublicKey;
   numMatches: number;
   matchesSettled: number;
   numParticipants: number;
@@ -87,7 +93,17 @@ export default function PollasPage() {
         const accounts = await (program.account as any).polla.all();
         if (cancelled) return;
 
-        const cards: PollaCard[] = accounts.map(
+        // Only show pollas that use the configured USDC mint. Other pollas
+        // (e.g. legacy ones pointing at Circle's mint when we've moved to
+        // a test mint) stay invisible — users can't fund those anyway.
+        const configuredMint = new PublicKey(USDC_MINT);
+        const filtered = accounts.filter(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ({ account }: { account: any }) =>
+            (account as RawPolla).usdcMint.equals(configuredMint),
+        );
+
+        const cards: PollaCard[] = filtered.map(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ({ publicKey, account }: { publicKey: PublicKey; account: any }) => {
             const raw = account as RawPolla;
