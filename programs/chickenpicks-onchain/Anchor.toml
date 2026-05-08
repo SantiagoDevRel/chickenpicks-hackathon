@@ -23,14 +23,14 @@ chickenpicks_onchain = "Cdd53o33BTaZcmpZ55TemGPmZRR2mbMiYDEU6Mecb3ut"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+# Default to localnet so `anchor test` doesn't burn devnet SOL on every run.
+# For explicit devnet deploys, use: anchor deploy --provider.cluster devnet
+cluster = "localnet"
 wallet = "../../keys/deployer.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
-
-[test.validator]
-url = "https://api.devnet.solana.com"
+# npx instead of yarn — yarn 1.22 chokes on root-level packageManager: pnpm@x.
+test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 
 # NOTE: program ID placeholder above is a non-base58-valid string until
 # `solana-keygen new -o keys/program.json` produces a real one. Then update:
