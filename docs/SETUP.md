@@ -82,10 +82,23 @@ cargo --version
 
 ### 2.4 Install Solana CLI 1.18.x
 
+Anza maintains the Solana CLI under `release.anza.xyz` (the legacy `release.solana.com` is deprecated and may TLS-fail).
+
 ```bash
-sh -c "$(curl -sSfL https://release.solana.com/v1.18.26/install)"
+sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.26/install)"
 export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
 echo 'export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"' >> ~/.bashrc
+solana --version
+```
+
+If the install script fails (TLS or other network issue), fall back to a direct GitHub download:
+
+```bash
+cd ~
+wget https://github.com/anza-xyz/agave/releases/download/v1.18.26/solana-release-x86_64-unknown-linux-gnu.tar.bz2
+tar jxf solana-release-x86_64-unknown-linux-gnu.tar.bz2
+echo 'export PATH="$HOME/solana-release/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 solana --version
 ```
 
