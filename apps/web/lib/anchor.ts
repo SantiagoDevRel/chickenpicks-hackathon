@@ -2,7 +2,7 @@
 
 import { AnchorProvider, Program, type Idl } from '@coral-xyz/anchor';
 import { Connection, PublicKey } from '@solana/web3.js';
-import idl from '@chickenpicks/anchor-client/idl' assert { type: 'json' };
+import idl from '@chickenpicks/anchor-client/idl' with { type: 'json' };
 import { PROGRAM_ID, SOLANA_RPC_URL } from '@chickenpicks/shared';
 
 export function getConnection(): Connection {
