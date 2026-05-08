@@ -11,7 +11,6 @@ import {
 } from '@coral-xyz/anchor';
 import {
   getAssociatedTokenAddressSync,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { Connection, PublicKey, SystemProgram } from '@solana/web3.js';
@@ -343,6 +342,77 @@ export default function PollaDetailPage() {
     }
   }
 
+  async function claimPrize() {
+    if (!pollaPubkey || !polla || !wallet || !userPubkey || !prediction) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adaptedWallet: any = {
+        publicKey: userPubkey,
+        signTransaction: async (tx: unknown) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return await (wallet as any).signTransaction(tx);
+        },
+        signAllTransactions: async (txs: unknown[]) => {
+          return Promise.all(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            txs.map((tx) => (wallet as any).signTransaction(tx)),
+          );
+        },
+      };
+      const provider = new AnchorProvider(conn, adaptedWallet, {
+        commitment: 'confirmed',
+      });
+      const program = new Program(idl as Idl, provider);
+
+      const [predPda] = PublicKey.findProgramAddressSync(
+        [
+          new TextEncoder().encode('prediction'),
+          pollaPubkey.toBuffer(),
+          userPubkey.toBuffer(),
+        ],
+        programId,
+      );
+      const userUsdcAta = getAssociatedTokenAddressSync(
+        usdcMintKey,
+        userPubkey,
+      );
+
+      const sig = await program.methods
+        .claimPrize()
+        .accounts({
+          polla: pollaPubkey,
+          pollaVault: polla.vault,
+          prediction: predPda,
+          predictorUsdcAta: userUsdcAta,
+          predictor: userPubkey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .rpc();
+      setLastSig(sig);
+      refreshAll();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Compute payout preview when settled + ranked
+  const payoutPreview = useMemo(() => {
+    if (!polla || !prediction) return null;
+    if (statusKey(polla.status) !== 'SETTLED') return null;
+    if (prediction.finalRank === 0xff) return null;
+    const sharePct = polla.prizeDistribution[prediction.finalRank] ?? 0;
+    if (sharePct === 0) return null;
+    // pool_after_fee = total_pool * 9500 / 10000
+    const poolAfterFee = polla.totalPool.muln(9500).divn(10000);
+    const payout = poolAfterFee.muln(sharePct).divn(100);
+    return { sharePct, payout };
+  }, [polla, prediction]);
+
   if (!pollaPubkey) {
     return (
       <main className="min-h-screen">
@@ -495,14 +565,81 @@ export default function PollaDetailPage() {
                             : 'SAVE PREDICTIONS'}
                       </button>
                     )}
-                    {prediction && statusKey(polla.status) !== 'OPEN' && (
-                      <p className="text-text-muted text-sm text-center">
-                        Predictions locked. {prediction.points > 0 && (
-                          <span className="text-gold">
-                            You scored {prediction.points} pts.
-                          </span>
+                    {prediction && statusKey(polla.status) === 'LOCKED' && (
+                      <div className="text-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/pollitos/Pollito_esperando.webp"
+                          alt=""
+                          width={64}
+                          height={64}
+                          className="mx-auto mb-2 opacity-90"
+                        />
+                        <p className="text-text-muted text-sm">
+                          Predictions locked. Waiting for results.
+                        </p>
+                      </div>
+                    )}
+                    {prediction && statusKey(polla.status) === 'SETTLED' && (
+                      <div className="text-center">
+                        {payoutPreview && !prediction.claimed ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src="/pollitos/pollito_capitan_lider.webp"
+                              alt=""
+                              width={80}
+                              height={80}
+                              className="mx-auto mb-2 drop-shadow-[0_4px_12px_rgba(255,215,0,0.4)]"
+                            />
+                            <div className="font-display tracking-[0.04em] text-2xl text-gold uppercase mb-1">
+                              You ranked #{prediction.finalRank + 1}
+                            </div>
+                            <div className="text-sm text-text-muted mb-4">
+                              {prediction.points} pts · {payoutPreview.sharePct}% of
+                              pool-after-fee
+                            </div>
+                            <button
+                              onClick={claimPrize}
+                              disabled={busy}
+                              className="rounded-md bg-gold px-6 py-3 font-display tracking-[0.08em] text-sm text-black hover:bg-amber disabled:opacity-50 transition"
+                            >
+                              {busy
+                                ? 'CLAIMING…'
+                                : `CLAIM ${formatUsdc(payoutPreview.payout)} USDC`}
+                            </button>
+                          </>
+                        ) : prediction.claimed ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src="/pollitos/pollito_capitan_lider.webp"
+                              alt=""
+                              width={64}
+                              height={64}
+                              className="mx-auto mb-2 opacity-80"
+                            />
+                            <p className="text-turf font-display tracking-[0.04em] text-sm">
+                              ✓ PRIZE CLAIMED · {prediction.points} PTS
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src="/pollitos/pollito_arquero_triste.webp"
+                              alt=""
+                              width={64}
+                              height={64}
+                              className="mx-auto mb-2 opacity-90"
+                            />
+                            <p className="text-text-muted text-sm">
+                              Polla settled. You scored {prediction.points} pts —
+                              not in the prize tier this time.
+                            </p>
+                          </>
                         )}
-                      </p>
+                      </div>
                     )}
                   </>
                 )}
