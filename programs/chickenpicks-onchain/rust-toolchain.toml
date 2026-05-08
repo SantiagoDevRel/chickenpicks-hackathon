@@ -1,0 +1,7 @@
+[toolchain]
+# Pin to 1.79 — Rust 1.80+ defaults to Cargo.lock v4 which the cargo bundled
+# with Solana 1.18.26 cannot parse, breaking `anchor build`. Bump only when
+# we move to Solana 2.x / Anchor 0.32+.
+channel = "1.79.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"
