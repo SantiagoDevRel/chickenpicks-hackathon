@@ -423,10 +423,31 @@ export default function PollaDetailPage() {
             {/* Matches + predict form */}
             <div className="lp-card p-6 mt-6">
               <h2 className="lp-section-title mb-4">Matches & Predictions</h2>
+
+              {/* Hint when user hasn't joined yet */}
+              {ready && authenticated && !prediction && statusKey(polla.status) === 'OPEN' && (
+                <div className="rounded-md border border-amber/30 bg-amber/5 p-3 mb-4 flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/pollitos/Pollito_esperando.webp"
+                    alt=""
+                    width={36}
+                    height={36}
+                  />
+                  <p className="text-xs text-amber font-display tracking-[0.04em]">
+                    JOIN THE POLLA TO UNLOCK PREDICTIONS
+                  </p>
+                </div>
+              )}
+
               <PredictForm
                 matches={matches}
                 scores={scores}
-                locked={statusKey(polla.status) !== 'OPEN'}
+                locked={
+                  statusKey(polla.status) !== 'OPEN' ||
+                  !authenticated ||
+                  !prediction
+                }
                 onChange={(idx, home, away) =>
                   setScores((prev) => {
                     const next = [...prev];
