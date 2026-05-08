@@ -1,6 +1,10 @@
 [toolchain]
 anchor_version = "0.31.0"
-solana_version = "1.18.26"
+# Solana 2.x — bundled rustc supports edition 2024, required by anchor-spl
+# 0.31's transitive crypto-common 0.2.1. If left at 1.18.26 the SBF compile
+# fails on `feature edition2024 is required`.
+# Use whatever stable version `release.anza.xyz/stable` resolves to at install.
+# (omitted here so anchor test uses the locally-installed CLI version)
 
 [features]
 resolution = true

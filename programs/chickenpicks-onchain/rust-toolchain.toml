@@ -1,7 +1,10 @@
 [toolchain]
-# Pin to 1.79 — Rust 1.80+ defaults to Cargo.lock v4 which the cargo bundled
-# with Solana 1.18.26 cannot parse, breaking `anchor build`. Bump only when
-# we move to Solana 2.x / Anchor 0.32+.
-channel = "1.79.0"
+# Rust 1.85+ supports edition 2024. Required because newer transitive deps
+# in the Anchor 0.31 / Solana 2.x tree (crypto-common 0.2.1, etc.) ship as
+# edition = "2024" crates. Pair with Solana CLI 2.x (the bundled rustc is
+# also 1.85+, so SBF compilation accepts these crates too).
+#
+# DO NOT downgrade. Rust 1.79 cannot parse edition2024 manifests at all.
+channel = "1.85.0"
 components = ["rustfmt", "clippy"]
 profile = "minimal"
