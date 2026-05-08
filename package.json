@@ -16,10 +16,12 @@
     "test": "turbo test",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json,yaml,yml}\"",
-    "init:platform": "tsx scripts/init-platform.ts"
+    "init:platform": "tsx scripts/init-platform.ts",
+    "seed:demo": "tsx scripts/seed-demo-polla.ts"
   },
   "devDependencies": {
     "@coral-xyz/anchor": "^0.31.0",
+    "@solana/spl-token": "^0.4.9",
     "@solana/web3.js": "^1.95.4",
     "@types/node": "^22.10.0",
     "prettier": "^3.4.2",
