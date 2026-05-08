@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AnchorProvider,
   BN,
@@ -423,23 +423,18 @@ export default function PollaDetailPage() {
             {/* Matches + predict form */}
             <div className="lp-card p-6 mt-6">
               <h2 className="lp-section-title mb-4">Matches & Predictions</h2>
-              <div className="space-y-3">
-                {matches.map((m, i) => (
-                  <MatchRow
-                    key={i}
-                    match={m}
-                    score={scores[i] || { home: '', away: '' }}
-                    locked={statusKey(polla.status) !== 'OPEN'}
-                    onChange={(home, away) =>
-                      setScores((prev) => {
-                        const next = [...prev];
-                        next[i] = { home, away };
-                        return next;
-                      })
-                    }
-                  />
-                ))}
-              </div>
+              <PredictForm
+                matches={matches}
+                scores={scores}
+                locked={statusKey(polla.status) !== 'OPEN'}
+                onChange={(idx, home, away) =>
+                  setScores((prev) => {
+                    const next = [...prev];
+                    next[idx] = { home, away };
+                    return next;
+                  })
+                }
+              />
 
               {/* Action area */}
               <div className="mt-6 pt-5 border-t border-border-subtle">
@@ -518,49 +513,81 @@ export default function PollaDetailPage() {
   );
 }
 
-function MatchRow({
-  match,
-  score,
+function PredictForm({
+  matches,
+  scores,
   locked,
   onChange,
 }: {
-  match: RawMatch;
-  score: { home: string; away: string };
+  matches: RawMatch[];
+  scores: { home: string; away: string }[];
   locked: boolean;
-  onChange: (home: string, away: string) => void;
+  onChange: (idx: number, home: string, away: string) => void;
 }) {
-  const home = decodeFixedString(match.homeTeam);
-  const away = decodeFixedString(match.awayTeam);
-  const hasResult = match.settled && match.homeScore >= 0 && match.awayScore >= 0;
+  // Flat input refs: 2 per match (home, away). Used for autojump on input.
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+
+  function focusNext(flatIdx: number) {
+    const next = inputRefs.current[flatIdx + 1];
+    if (next) {
+      next.focus();
+      next.select();
+    }
+  }
 
   return (
-    <div className="rounded-md bg-bg-elevated/40 border border-border-subtle p-3">
-      <div className="flex items-center gap-3">
-        <div className="flex-1 text-right font-display tracking-[0.04em] text-sm uppercase text-text-primary">
-          {home}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <ScoreInput
-            value={score.home}
-            disabled={locked}
-            onChange={(v) => onChange(v, score.away)}
-          />
-          <span className="font-display text-text-muted text-sm">vs</span>
-          <ScoreInput
-            value={score.away}
-            disabled={locked}
-            onChange={(v) => onChange(score.home, v)}
-          />
-        </div>
-        <div className="flex-1 text-left font-display tracking-[0.04em] text-sm uppercase text-text-primary">
-          {away}
-        </div>
-      </div>
-      {hasResult && (
-        <div className="mt-2 text-center font-display tracking-[0.08em] text-xs text-amber">
-          FINAL: {match.homeScore} - {match.awayScore}
-        </div>
-      )}
+    <div className="space-y-3">
+      {matches.map((m, i) => {
+        const score = scores[i] || { home: '', away: '' };
+        const home = decodeFixedString(m.homeTeam);
+        const away = decodeFixedString(m.awayTeam);
+        const hasResult = m.settled && m.homeScore >= 0 && m.awayScore >= 0;
+        return (
+          <div
+            key={i}
+            className="rounded-md bg-bg-elevated/40 border border-border-subtle p-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex-1 text-right font-display tracking-[0.04em] text-sm uppercase text-text-primary">
+                {home}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <ScoreInput
+                  refSetter={(el) => {
+                    inputRefs.current[i * 2] = el;
+                  }}
+                  value={score.home}
+                  disabled={locked}
+                  onValueChange={(v) => {
+                    onChange(i, v, score.away);
+                    if (v.length >= 1) focusNext(i * 2);
+                  }}
+                />
+                <span className="font-display text-text-muted text-sm">vs</span>
+                <ScoreInput
+                  refSetter={(el) => {
+                    inputRefs.current[i * 2 + 1] = el;
+                  }}
+                  value={score.away}
+                  disabled={locked}
+                  onValueChange={(v) => {
+                    onChange(i, score.home, v);
+                    if (v.length >= 1) focusNext(i * 2 + 1);
+                  }}
+                />
+              </div>
+              <div className="flex-1 text-left font-display tracking-[0.04em] text-sm uppercase text-text-primary">
+                {away}
+              </div>
+            </div>
+            {hasResult && (
+              <div className="mt-2 text-center font-display tracking-[0.08em] text-xs text-amber">
+                FINAL: {m.homeScore} - {m.awayScore}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -568,20 +595,29 @@ function MatchRow({
 function ScoreInput({
   value,
   disabled,
-  onChange,
+  onValueChange,
+  refSetter,
 }: {
   value: string;
   disabled: boolean;
-  onChange: (v: string) => void;
+  onValueChange: (v: string) => void;
+  refSetter: (el: HTMLInputElement | null) => void;
 }) {
   return (
     <input
+      ref={refSetter}
       type="number"
+      inputMode="numeric"
       min={0}
       max={20}
       value={value}
       disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        // Cap to 2 chars max to avoid silly long inputs
+        const v = e.target.value.replace(/[^0-9]/g, '').slice(0, 2);
+        onValueChange(v);
+      }}
+      onFocus={(e) => e.currentTarget.select()}
       className="w-12 h-10 rounded-md bg-bg-card text-center font-display tracking-[0.04em] text-lg text-text-primary border border-border-default focus:border-gold focus:outline-none disabled:opacity-60"
     />
   );
