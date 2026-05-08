@@ -29,10 +29,13 @@ export function Providers({ children }: { children: ReactNode }) {
     <PrivyProvider
       appId={appId}
       config={{
-        loginMethods: ['sms'],
+        // Email is the primary login (works globally including Latam where
+        // SMS is region-blocked). SMS stays as a fallback for demo regions
+        // where it does work. Both create the same embedded Solana wallet.
+        loginMethods: ['email', 'sms'],
         appearance: {
           theme: 'dark',
-          accentColor: '#f59e0b',
+          accentColor: '#FFD700',
           logo: undefined,
         },
         embeddedWallets: {
