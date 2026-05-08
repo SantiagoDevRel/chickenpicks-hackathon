@@ -17,7 +17,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json,yaml,yml}\"",
     "init:platform": "tsx scripts/init-platform.ts",
-    "seed:demo": "tsx scripts/seed-demo-polla.ts"
+    "mint:setup": "tsx scripts/setup-test-mint.ts",
+    "seed:demo": "tsx scripts/seed-demo-polla.ts",
+    "fund": "tsx scripts/fund-user.ts"
   },
   "devDependencies": {
     "@coral-xyz/anchor": "^0.31.0",

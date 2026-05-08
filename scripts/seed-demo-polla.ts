@@ -33,11 +33,22 @@ const IDL_PATH = path.join(
   'idl.json',
 );
 
-const POLLA_NAME = 'WC2026 Group A';
+const POLLA_NAME = 'WC2026 Test Group';
 const TOURNAMENT = 'World Cup 2026';
 const ENTRY_AMOUNT = new BN(1_000_000); // 1 USDC (6 decimals)
 const PRIZE_DISTRIBUTION = [50, 30, 20, 0, 0, 0, 0, 0, 0, 0];
-const USDC_MINT = new PublicKey('Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr');
+
+// Resolve test USDC mint from keys/test-mint.json (created by mint:setup).
+// Falls back to Circle's devnet USDC if test mint isn't set up — but that
+// path requires Circle's faucet for users to get USDC.
+const TEST_MINT_PATH = path.join(repoRoot, 'keys', 'test-mint.json');
+let USDC_MINT: PublicKey;
+if (fs.existsSync(TEST_MINT_PATH)) {
+  const bytes = JSON.parse(fs.readFileSync(TEST_MINT_PATH, 'utf8'));
+  USDC_MINT = Keypair.fromSecretKey(Uint8Array.from(bytes)).publicKey;
+} else {
+  USDC_MINT = new PublicKey('Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr');
+}
 
 const MATCHES = [
   { home: 'Argentina', away: 'Brazil' },
