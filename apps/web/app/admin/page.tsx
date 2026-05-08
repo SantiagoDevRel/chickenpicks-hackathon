@@ -1,11 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useSolanaWallets } from '@privy-io/react-auth/solana';
 import { SystemProgram } from '@solana/web3.js';
-import { ConnectButton } from '@/components/ConnectButton';
+import { BrandHeader } from '@/components/BrandHeader';
 import { getConnection, getProgram, platformPda } from '@/lib/anchor';
 
 const PLATFORM_AUTHORITY = process.env.NEXT_PUBLIC_PLATFORM_AUTHORITY ?? '';
@@ -39,9 +38,6 @@ export default function AdminPage() {
           setStatus({ kind: 'not-initialized' });
           return;
         }
-        // Account exists — for v1, just confirm. Decoding via Anchor would
-        // give us authority/treasury/feeBps; we can add that once useProgram
-        // is wired with a wallet.
         setStatus({
           kind: 'initialized',
           authority: PLATFORM_AUTHORITY,
@@ -63,10 +59,11 @@ export default function AdminPage() {
     if (!wallet) return;
     setBusy(true);
     try {
-      // Privy embedded wallets implement signTransaction. Adapt to AnchorProvider.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const adaptedWallet: any = {
-        publicKey: wallet.address ? new (await import('@solana/web3.js')).PublicKey(wallet.address) : null,
+        publicKey: wallet.address
+          ? new (await import('@solana/web3.js')).PublicKey(wallet.address)
+          : null,
         signTransaction: async (tx: unknown) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return await (wallet as any).signTransaction(tx);
@@ -102,33 +99,56 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <Link href="/" className="text-xl font-bold tracking-tight">
-          🐔 ChickenPicks <span className="text-accent">OnChain</span>
-        </Link>
-        <ConnectButton />
-      </header>
+      <BrandHeader />
 
-      <div className="mx-auto max-w-2xl px-6 py-10">
-        <h1 className="mb-2 text-3xl font-bold">Admin · Fake oracle</h1>
-        <p className="mb-8 text-sm text-muted">
-          Restricted to the platform authority wallet (
-          <code className="font-mono">{PLATFORM_AUTHORITY.slice(0, 6)}…{PLATFORM_AUTHORITY.slice(-4)}</code>).
-        </p>
+      <div className="mx-auto max-w-3xl px-4 py-10">
+        <div className="flex items-center gap-4 mb-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/pollitos/pollito_arbitro_lider.webp"
+            alt=""
+            width={56}
+            height={56}
+            className="drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
+          />
+          <div>
+            <h1 className="font-display tracking-[0.04em] text-3xl text-text-primary uppercase leading-none">
+              Admin · Fake Oracle
+            </h1>
+            <p className="mt-2 text-sm text-text-muted">
+              Restricted to platform authority{' '}
+              <code className="font-mono text-text-secondary">
+                {PLATFORM_AUTHORITY.slice(0, 6)}…{PLATFORM_AUTHORITY.slice(-4)}
+              </code>
+            </p>
+          </div>
+        </div>
 
-        {!ready && <p className="text-muted">Loading wallet…</p>}
+        {!ready && <p className="text-text-muted">Loading wallet…</p>}
 
         {ready && !authenticated && (
-          <div className="rounded-xl border border-border bg-card p-6">
-            <p className="text-muted">Sign in with phone first to access /admin.</p>
+          <div className="lp-card p-6">
+            <p className="text-text-secondary">Sign in with phone first to access /admin.</p>
           </div>
         )}
 
         {ready && authenticated && !isAuthority && (
-          <div className="rounded-xl border border-red-900 bg-red-950/30 p-6">
-            <p className="text-red-300">
-              You are signed in as <code className="font-mono">{myAddress.slice(0, 6)}…{myAddress.slice(-4)}</code>{' '}
-              — not the platform authority. Switch to the deployer wallet to use admin tools.
+          <div className="lp-card p-6 border-red-alert/40">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/pollitos/pollito_arbitro_triste.webp"
+              alt=""
+              width={64}
+              height={64}
+              className="mb-3"
+            />
+            <p className="text-red-alert">
+              You are signed in as{' '}
+              <code className="font-mono">
+                {myAddress.slice(0, 6)}…{myAddress.slice(-4)}
+              </code>{' '}
+              — not the platform authority. Switch to the deployer wallet to use admin
+              tools.
             </p>
           </div>
         )}
@@ -136,49 +156,42 @@ export default function AdminPage() {
         {ready && authenticated && isAuthority && (
           <div className="space-y-6">
             <Section title="Platform">
-              {status.kind === 'unknown' && <p className="text-muted">Checking…</p>}
+              {status.kind === 'unknown' && (
+                <p className="text-text-muted">Checking…</p>
+              )}
               {status.kind === 'not-initialized' && (
                 <>
-                  <p className="mb-4 text-sm text-muted">
-                    PlatformConfig PDA does not exist on devnet yet. Click below to call{' '}
-                    <code>initialize_platform</code>.
+                  <p className="mb-4 text-sm text-text-muted">
+                    PlatformConfig PDA does not exist on devnet yet. Click below to
+                    call <code className="text-text-secondary">initialize_platform</code>.
                   </p>
                   <button
                     onClick={handleInitialize}
                     disabled={busy}
-                    className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-black hover:opacity-90 disabled:opacity-50 transition"
+                    className="rounded-md bg-gold px-5 py-2.5 font-display tracking-[0.08em] text-sm text-black hover:bg-amber disabled:opacity-50 transition"
                   >
-                    {busy ? 'Sending…' : 'Initialize platform (5% fee)'}
+                    {busy ? 'SENDING…' : 'INITIALIZE PLATFORM (5% FEE)'}
                   </button>
                 </>
               )}
               {status.kind === 'initialized' && (
-                <ul className="space-y-1 text-sm">
-                  <li>
-                    <span className="text-muted">authority:</span>{' '}
-                    <code className="font-mono">{status.authority}</code>
-                  </li>
-                  <li>
-                    <span className="text-muted">treasury:</span>{' '}
-                    <code className="font-mono">{status.treasury}</code>
-                  </li>
-                  <li>
-                    <span className="text-muted">fee_bps:</span>{' '}
-                    <code className="font-mono">{status.feeBps}</code> (5%)
-                  </li>
+                <ul className="space-y-2 text-sm">
+                  <Row label="authority" value={status.authority} />
+                  <Row label="treasury" value={status.treasury} />
+                  <Row label="fee_bps" value={`${status.feeBps} (5%)`} />
                 </ul>
               )}
               {status.kind === 'error' && (
-                <p className="text-red-300">{status.message}</p>
+                <p className="text-red-alert text-sm">{status.message}</p>
               )}
               {lastSig && (
-                <p className="mt-3 text-xs text-muted">
+                <p className="mt-3 text-xs text-text-muted">
                   Tx:{' '}
                   <a
                     href={`https://explorer.solana.com/tx/${lastSig}?cluster=devnet`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-mono text-accent underline"
+                    className="font-mono text-gold hover:underline"
                   >
                     {lastSig.slice(0, 12)}…
                   </a>
@@ -186,8 +199,8 @@ export default function AdminPage() {
               )}
             </Section>
 
-            <Section title="Pollas + matches (Day 2)">
-              <p className="text-sm text-muted">
+            <Section title="Pollas + Matches (Day 2)">
+              <p className="text-sm text-text-muted">
                 Create polla, add matches, post fake results — wired up next iteration.
               </p>
             </Section>
@@ -200,9 +213,20 @@ export default function AdminPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-6">
-      <h2 className="mb-3 text-lg font-bold">{title}</h2>
+    <div className="lp-card p-6">
+      <h2 className="lp-section-title mb-3">{title}</h2>
       {children}
     </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <li className="flex items-center justify-between gap-4">
+      <span className="text-text-muted">{label}</span>
+      <code className="font-mono text-text-secondary text-xs truncate max-w-[60%]">
+        {value}
+      </code>
+    </li>
   );
 }

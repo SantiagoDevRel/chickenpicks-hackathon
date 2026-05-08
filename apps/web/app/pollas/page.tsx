@@ -1,43 +1,49 @@
 'use client';
 
 import Link from 'next/link';
-import { ConnectButton } from '@/components/ConnectButton';
+import { BrandHeader } from '@/components/BrandHeader';
 
 export default function PollasPage() {
   // TODO Day 2: read pollas from chain via getProgramAccounts.
-  // For now: empty state until /admin → initialize_platform → create_polla flow runs.
   const pollas: { pubkey: string; name: string; entry: string; status: string }[] = [];
 
   return (
     <main className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <Link href="/" className="text-xl font-bold tracking-tight">
-          🐔 ChickenPicks <span className="text-accent">OnChain</span>
-        </Link>
-        <ConnectButton />
-      </header>
+      <BrandHeader />
 
-      <div className="mx-auto max-w-5xl px-6 py-10">
+      <div className="mx-auto max-w-5xl px-4 py-10">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Public pollas</h1>
+          <h1 className="font-display tracking-[0.04em] text-3xl md:text-4xl text-text-primary uppercase">
+            Public Pollas
+          </h1>
           <Link
             href="/pollas/create"
-            className="rounded-lg border border-border bg-card px-4 py-2 text-sm hover:bg-border transition"
+            className="rounded-md border border-border-default bg-bg-card/50 backdrop-blur px-4 py-2 font-display tracking-[0.08em] text-xs text-text-primary hover:border-border-strong transition"
           >
-            + Create polla
+            + CREATE POLLA
           </Link>
         </div>
 
         {pollas.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-            <p className="text-lg text-muted">No pollas yet.</p>
-            <p className="mt-2 text-sm text-muted">
-              Once the platform is initialized and the first polla is created, it
-              will appear here. Admins: visit{' '}
-              <Link href="/admin" className="text-accent underline">
+          <div className="lp-card p-12 text-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/pollitos/Pollito_esperando.webp"
+              alt=""
+              width={120}
+              height={120}
+              className="mx-auto mb-6 opacity-90"
+            />
+            <p className="font-display tracking-[0.04em] text-xl text-text-primary mb-2 uppercase">
+              No pollas yet
+            </p>
+            <p className="text-sm text-text-muted max-w-md mx-auto">
+              Once the platform is initialized and the first polla is created,
+              they'll appear here. Admin: head to{' '}
+              <Link href="/admin" className="text-gold hover:underline">
                 /admin
               </Link>{' '}
-              to initialize.
+              to bootstrap.
             </p>
           </div>
         ) : (
@@ -46,13 +52,15 @@ export default function PollasPage() {
               <Link
                 key={p.pubkey}
                 href={`/pollas/${p.pubkey}`}
-                className="rounded-xl border border-border bg-card p-5 transition hover:border-accent"
+                className="lp-card p-5 transition hover:border-border-strong"
               >
-                <div className="mb-1 text-sm uppercase tracking-widest text-accent">
+                <div className="font-display tracking-[0.08em] text-[11px] text-gold mb-2 uppercase">
                   {p.status}
                 </div>
-                <div className="mb-2 text-lg font-bold">{p.name}</div>
-                <div className="text-sm text-muted">Entry: {p.entry}</div>
+                <div className="font-display tracking-[0.02em] text-xl text-text-primary mb-2 uppercase">
+                  {p.name}
+                </div>
+                <div className="text-sm text-text-muted">Entry: {p.entry}</div>
               </Link>
             ))}
           </div>

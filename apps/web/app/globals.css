@@ -1,17 +1,180 @@
+/* globals.css — Tribuna Caliente design system, ported from la-polla */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-}
+  /* surfaces */
+  --bg-base: #080c10;
+  --bg-card: #0e1420;
+  --bg-elevated: #131b2b;
+  --bg-subtle: #0b1119;
 
-html, body {
-  background: #0a0a0a;
-  color: #fafafa;
-  min-height: 100vh;
+  /* brand accents */
+  --gold: #ffd700;
+  --amber: #ff9f1c;
+  --turf: #1fd87f;
+
+  /* semantic */
+  --red-alert: #ff3d57;
+
+  /* text */
+  --text-primary: #f5f7fa;
+  --text-secondary: #d1d7e0;
+  --text-muted: #a8afbc;
+
+  /* RGB triplets — used by Tailwind alpha modifiers (bg-gold/10 etc.) */
+  --bg-base-rgb: 8 12 16;
+  --bg-card-rgb: 14 20 32;
+  --bg-elevated-rgb: 19 27 43;
+  --bg-subtle-rgb: 11 17 25;
+  --gold-rgb: 255 215 0;
+  --amber-rgb: 255 159 28;
+  --turf-rgb: 31 216 127;
+  --red-alert-rgb: 255 61 87;
+  --text-primary-rgb: 245 247 250;
+  --text-secondary-rgb: 209 215 224;
+  --text-muted-rgb: 168 175 188;
+
+  /* borders */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  /* radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
 }
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  font-size: 18px;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body), 'Outfit', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* sports numbers + section titles */
+.score-font,
+.font-display {
+  font-family: var(--font-display), 'Bebas Neue', sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-pulse-live {
+  animation: pulse-live 1.5s ease-in-out infinite;
+}
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out forwards;
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@layer components {
+  /* Card design tokens — single source of truth for every card surface.
+     Mirrors la-polla's .lp-card so the brand reads identical across both
+     products. */
+  .lp-card {
+    background-color: rgba(14, 20, 32, 0.5);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+  }
+  .lp-card-hero {
+    background-color: rgba(14, 20, 32, 0.5);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 215, 0, 0.28);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 60px -28px rgba(255, 215, 0, 0.32);
+  }
+  .lp-section-title {
+    font-family: var(--font-display), 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* gold focus ring on dark backgrounds */
+:focus-visible {
+  outline: 2px solid rgba(255, 215, 0, 0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid rgba(255, 215, 0, 0.6);
+  outline-offset: 2px;
 }
