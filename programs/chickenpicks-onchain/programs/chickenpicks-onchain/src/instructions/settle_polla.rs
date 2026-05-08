@@ -48,7 +48,9 @@ pub struct SettlePolla<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, SettlePolla<'info>>) -> Result<()> {
+pub fn handler<'info>(
+    ctx: Context<'_, '_, 'info, 'info, SettlePolla<'info>>,
+) -> Result<()> {
     let polla_key = ctx.accounts.polla.key();
     let polla_creator;
     let polla_name;

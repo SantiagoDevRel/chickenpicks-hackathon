@@ -88,7 +88,9 @@ pub mod chickenpicks_onchain {
     /// 5/3/2/0 rule, sorts by (points DESC, submitted_at_slot ASC), writes
     /// final_rank to each Prediction, transfers 5% fee to treasury, marks
     /// polla.status = Settled.
-    pub fn settle_polla(ctx: Context<SettlePolla>) -> Result<()> {
+    pub fn settle_polla<'info>(
+        ctx: Context<'_, '_, 'info, 'info, SettlePolla<'info>>,
+    ) -> Result<()> {
         instructions::settle_polla::handler(ctx)
     }
 
