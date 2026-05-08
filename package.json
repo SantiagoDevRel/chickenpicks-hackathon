@@ -15,10 +15,15 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,yaml,yml}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,md,json,yaml,yml}\""
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json,yaml,yml}\"",
+    "init:platform": "tsx scripts/init-platform.ts"
   },
   "devDependencies": {
+    "@coral-xyz/anchor": "^0.31.0",
+    "@solana/web3.js": "^1.95.4",
+    "@types/node": "^22.10.0",
     "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
     "turbo": "^2.3.3",
     "typescript": "^5.7.2"
   }
