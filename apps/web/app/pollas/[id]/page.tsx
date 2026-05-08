@@ -24,6 +24,7 @@ import {
   USDC_MINT,
 } from '@chickenpicks/shared';
 import { BrandHeader } from '@/components/BrandHeader';
+import { VoiceAgent } from '@/components/VoiceAgent';
 
 const programId = new PublicKey(PROGRAM_ID);
 const usdcMintKey = new PublicKey(USDC_MINT);
@@ -433,6 +434,12 @@ export default function PollaDetailPage() {
   return (
     <main className="min-h-screen">
       <BrandHeader />
+
+      {/* Floating voice agent button */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <VoiceAgent pollaPubkey={pollaPubkey?.toBase58()} />
+      </div>
+
       <div className="mx-auto max-w-3xl px-4 py-8">
         <Link
           href="/pollas"
