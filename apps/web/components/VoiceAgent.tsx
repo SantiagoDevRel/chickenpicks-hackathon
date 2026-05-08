@@ -63,7 +63,7 @@ export function VoiceAgent({ pollaPubkey }: { pollaPubkey?: string }) {
       ),
     clientTools: {
       // ─── list_pollas: returns OPEN pollas with the configured mint ──────
-      list_pollas: async () => {
+      list_pools: async () => {
         const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
         const provider = new AnchorProvider(conn, READ_ONLY_WALLET, {
           commitment: 'confirmed',
@@ -90,13 +90,13 @@ export function VoiceAgent({ pollaPubkey }: { pollaPubkey?: string }) {
       },
 
       // ─── get_polla_details: matches list for a given polla ──────────────
-      get_polla_details: async ({ polla_id }: { polla_id: string }) => {
+      get_pool_details: async ({ polla_id }: { polla_id: string }) => {
         const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
         const provider = new AnchorProvider(conn, READ_ONLY_WALLET, {
           commitment: 'confirmed',
         });
         const program = new Program(idl as Idl, provider);
-        const pollaPk = new PublicKey(polla_id);
+        const pollaPk = new PublicKey(pool_id);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const polla = await (program.account as any).polla.fetch(pollaPk);
         const matchPdas: PublicKey[] = [];

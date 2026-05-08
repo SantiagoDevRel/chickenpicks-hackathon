@@ -41,7 +41,7 @@ export function BrandHeader() {
             href="/pollas"
             className="hidden md:inline-block font-display tracking-[0.08em] text-[14px] text-text-secondary hover:text-text-primary transition"
           >
-            POLLAS
+            POOLS
           </Link>
           <Link
             href="/admin"

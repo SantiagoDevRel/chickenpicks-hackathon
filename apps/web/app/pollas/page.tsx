@@ -142,13 +142,13 @@ export default function PollasPage() {
       <div className="mx-auto max-w-5xl px-4 py-10">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="font-display tracking-[0.04em] text-3xl md:text-4xl text-text-primary uppercase">
-            Public Pollas
+            Public Pools
           </h1>
           <Link
             href="/pollas/create"
             className="rounded-md border border-border-default bg-bg-card/50 backdrop-blur px-4 py-2 font-display tracking-[0.08em] text-xs text-text-primary hover:border-border-strong transition"
           >
-            + CREATE POLLA
+            + CREATE POOL
           </Link>
         </div>
 
@@ -177,11 +177,11 @@ export default function PollasPage() {
               className="mx-auto mb-6 opacity-90"
             />
             <p className="font-display tracking-[0.04em] text-xl text-text-primary mb-2 uppercase">
-              No pollas yet
+              No pools yet
             </p>
             <p className="text-sm text-text-muted max-w-md mx-auto">
               Run <code className="text-gold">pnpm seed:demo</code> to create the
-              demo polla, or visit{' '}
+              demo pool, or visit{' '}
               <Link href="/pollas/create" className="text-gold hover:underline">
                 /pollas/create
               </Link>{' '}

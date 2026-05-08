@@ -445,7 +445,7 @@ export default function PollaDetailPage() {
           href="/pollas"
           className="font-display tracking-[0.08em] text-xs text-text-muted hover:text-text-primary transition"
         >
-          ← BACK TO POLLAS
+          ← BACK TO POOLS
         </Link>
 
         {loading && (
@@ -505,7 +505,7 @@ export default function PollaDetailPage() {
 
             {/* Matches + predict form */}
             <div className="lp-card p-6 mt-6">
-              <h2 className="lp-section-title mb-4">Matches & Predictions</h2>
+              <h2 className="lp-section-title mb-4">Matches & Picks</h2>
 
               {/* Hint when user hasn't joined yet */}
               {ready && authenticated && !prediction && statusKey(polla.status) === 'OPEN' && (
@@ -518,7 +518,7 @@ export default function PollaDetailPage() {
                     height={36}
                   />
                   <p className="text-xs text-amber font-display tracking-[0.04em]">
-                    JOIN THE POLLA TO UNLOCK PREDICTIONS
+                    JOIN THE POOL TO UNLOCK PICKS
                   </p>
                 </div>
               )}
@@ -548,7 +548,7 @@ export default function PollaDetailPage() {
 
                 {ready && !authenticated && (
                   <p className="text-text-secondary text-sm">
-                    Sign in with email or phone to join + predict.
+                    Sign in with email or phone to join + pick.
                   </p>
                 )}
 
@@ -562,7 +562,7 @@ export default function PollaDetailPage() {
                       >
                         {busy
                           ? 'JOINING…'
-                          : `JOIN POLLA (${formatUsdc(polla.entryAmount)} USDC)`}
+                          : `JOIN POOL (${formatUsdc(polla.entryAmount)} USDC)`}
                       </button>
                     )}
                     {prediction && statusKey(polla.status) === 'OPEN' && (
@@ -574,8 +574,8 @@ export default function PollaDetailPage() {
                         {busy
                           ? 'SAVING…'
                           : prediction.scores.some((s) => s.home >= 0)
-                            ? 'UPDATE PREDICTIONS'
-                            : 'SAVE PREDICTIONS'}
+                            ? 'UPDATE PICKS'
+                            : 'SAVE PICKS'}
                       </button>
                     )}
                     {prediction && statusKey(polla.status) === 'LOCKED' && (
@@ -589,7 +589,7 @@ export default function PollaDetailPage() {
                           className="mx-auto mb-2 opacity-90"
                         />
                         <p className="text-text-muted text-sm">
-                          Predictions locked. Waiting for results.
+                          Picks locked. Waiting for results.
                         </p>
                       </div>
                     )}
@@ -647,7 +647,7 @@ export default function PollaDetailPage() {
                               className="mx-auto mb-2 opacity-90"
                             />
                             <p className="text-text-muted text-sm">
-                              Polla settled. You scored {prediction.points} pts —
+                              Pool settled. You scored {prediction.points} pts —
                               not in the prize tier this time.
                             </p>
                           </>
