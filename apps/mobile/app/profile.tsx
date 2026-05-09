@@ -113,7 +113,13 @@ export default function ProfileScreen() {
         setEntries(list);
         setError(null);
       } catch (e) {
-        if (!cancelled) setError((e as Error).message);
+        if (!cancelled) {
+          const err = e as Error;
+          const stackHead = (err.stack ?? '').split('\n').slice(0, 4).join('\n');
+          setError(`${err.message}\n\n${stackHead}`);
+          // eslint-disable-next-line no-console
+          console.warn('[profile.load] error:', err);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }

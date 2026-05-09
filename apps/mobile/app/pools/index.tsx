@@ -72,7 +72,16 @@ export default function PoolsScreen() {
         setPools(cards);
         setError(null);
       } catch (e) {
-        if (!cancelled) setError((e as Error).message);
+        if (!cancelled) {
+          const err = e as Error;
+          // Surface stack so we can debug "undefined is not a function" type
+          // errors on real devices via the on-screen banner (no adb logcat
+          // available on Play Protect-locked phones).
+          const stackHead = (err.stack ?? '').split('\n').slice(0, 4).join('\n');
+          setError(`${err.message}\n\n${stackHead}`);
+          // eslint-disable-next-line no-console
+          console.warn('[pools.load] error:', err);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
