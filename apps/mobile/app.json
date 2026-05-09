@@ -4,12 +4,12 @@
     "slug": "chickenpicks-onchain",
     "version": "0.0.1",
     "orientation": "portrait",
-    "icon": "./assets/pollitos/pollito_capitan_lider.webp",
+    "icon": "./assets/pollitos/pollito_capitan_lider.png",
     "scheme": "chickenpicks",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/pollitos/pollito_capitan_lider.webp",
+      "image": "./assets/pollitos/pollito_capitan_lider.png",
       "resizeMode": "contain",
       "backgroundColor": "#080C10"
     },
@@ -21,7 +21,7 @@
       "package": "app.chickenpicks.onchain",
       "versionCode": 1,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/pollitos/pollito_capitan_lider.webp",
+        "foregroundImage": "./assets/pollitos/pollito_capitan_lider.png",
         "backgroundColor": "#080C10"
       },
       "permissions": [
