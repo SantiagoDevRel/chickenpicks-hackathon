@@ -24,7 +24,6 @@ import {
   USDC_MINT,
 } from '@chickenpicks/shared';
 import { BrandHeader } from '@/components/BrandHeader';
-import { VoiceAgent } from '@/components/VoiceAgent';
 import {
   PicksConfirmModal,
   type ConfirmState,
@@ -35,7 +34,7 @@ import {
   type JoinConfirmState,
 } from '@/components/JoinConfirmModal';
 import { pollitoImage, usePollito } from '@/lib/usePollito';
-import { resolvePagePath } from '@/lib/navRoutes';
+import { useSetVoiceCallbacks } from '@/lib/VoiceContext';
 
 const programId = new PublicKey(PROGRAM_ID);
 const usdcMintKey = new PublicKey(USDC_MINT);
