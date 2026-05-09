@@ -765,6 +765,19 @@ export default function PollaDetailPage() {
               return { navigated: false, error: (e as Error).message };
             }
           }}
+          onGoToPage={async (page: string) => {
+            const routes: Record<string, string> = {
+              home: '/',
+              pools: '/pollas',
+              admin: '/admin',
+              profile: '/profile',
+            };
+            const path = routes[page.toLowerCase().trim()];
+            if (!path)
+              return { navigated: false, error: `Unknown page: ${page}` };
+            window.location.assign(path);
+            return { navigated: true };
+          }}
         />
       </div>
 

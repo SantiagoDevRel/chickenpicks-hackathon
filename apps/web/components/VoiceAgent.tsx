@@ -56,6 +56,7 @@ export function VoiceAgent({
   onVoiceSubmitPicks,
   onVoiceJoinPool,
   onOpenPool,
+  onGoToPage,
 }: {
   pollaPubkey?: string;
   onVoiceSubmitPicks?: (
@@ -70,6 +71,7 @@ export function VoiceAgent({
     error?: string;
   }>;
   onOpenPool?: (poolId: string) => Promise<{ navigated: boolean; error?: string }>;
+  onGoToPage?: (page: string) => Promise<{ navigated: boolean; error?: string }>;
 }) {
   const { wallets } = useSolanaWallets();
   const wallet = wallets[0];
@@ -109,6 +111,28 @@ export function VoiceAgent({
   // tool's return value against the strict signature.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clientTools: any = {
+      // ─── go_to_page: navigate to a named app page ─────────────────────
+      // Triggered by phrases like "take me to pools", "go home", "open
+      // admin". Maps friendly names -> routes inside the parent.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      go_to_page: async (params: any) => {
+        const page = (params?.page ?? '').toString().toLowerCase().trim();
+        if (!page) {
+          return { error: 'No page name provided.' };
+        }
+        if (!onGoToPage) {
+          return { error: 'Navigation not available on this page.' };
+        }
+        const result = await onGoToPage(page);
+        if (result.navigated) {
+          return {
+            status: 'navigated',
+            message: `Browser is now on /${page === 'home' ? '' : page}.`,
+          };
+        }
+        return { status: 'error', error: result.error ?? 'Navigation failed.' };
+      },
+
       // ─── open_pool: navigate to a pool's detail page ──────────────────
       // Triggered when the user picks a pool from list_pools or names it
       // ("open WC2026 Voice Demo"). The agent passes the pool's pubkey

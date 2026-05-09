@@ -141,13 +141,27 @@ export default function PollasPage() {
   const handleVoiceOpenPool = useCallback(
     async (poolId: string) => {
       try {
-        // Validate it parses as a pubkey before navigating
         new PublicKey(poolId);
         router.push(`/pollas/${poolId}`);
         return { navigated: true };
       } catch (e) {
         return { navigated: false, error: (e as Error).message };
       }
+    },
+    [router],
+  );
+  const handleGoToPage = useCallback(
+    async (page: string) => {
+      const routes: Record<string, string> = {
+        home: '/',
+        pools: '/pollas',
+        admin: '/admin',
+        profile: '/profile',
+      };
+      const path = routes[page.toLowerCase().trim()];
+      if (!path) return { navigated: false, error: `Unknown page: ${page}` };
+      router.push(path);
+      return { navigated: true };
     },
     [router],
   );
@@ -160,7 +174,10 @@ export default function PollasPage() {
           "what pools are open" / "open WC2026 Voice Demo" without first
           drilling into a specific pool. */}
       <div className="fixed bottom-6 right-6 z-40">
-        <VoiceAgent onOpenPool={handleVoiceOpenPool} />
+        <VoiceAgent
+          onOpenPool={handleVoiceOpenPool}
+          onGoToPage={handleGoToPage}
+        />
       </div>
 
       <div className="mx-auto max-w-5xl px-4 py-10">

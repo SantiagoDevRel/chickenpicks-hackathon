@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import { BrandHeader } from '@/components/BrandHeader';
+import { NavVoiceMount } from '@/components/NavVoiceMount';
 
 export default function LandingPage() {
   return (
     <main className="min-h-screen">
       <BrandHeader />
+      <NavVoiceMount />
 
       {/* Hero */}
       <section className="mx-auto max-w-5xl px-4 pt-12 pb-16 md:pt-20 md:pb-24">
