@@ -7,8 +7,36 @@
 //   server endpoints can sign + send instructions on behalf of the platform
 //   authority.
 
-import { AnchorProvider, Program, Wallet, type Idl } from '@coral-xyz/anchor';
-import { Connection, Keypair } from '@solana/web3.js';
+import { AnchorProvider, Program, type Idl } from '@coral-xyz/anchor';
+import {
+  Connection,
+  Keypair,
+  type Transaction,
+  type VersionedTransaction,
+} from '@solana/web3.js';
+
+// Minimal Wallet implementation (Anchor 0.31 doesn't re-export Wallet at the
+// top-level barrel anymore — we just need an object that signs with our
+// deployer keypair).
+class KeypairWallet {
+  constructor(public readonly payer: Keypair) {}
+  get publicKey() {
+    return this.payer.publicKey;
+  }
+  async signTransaction<T extends Transaction | VersionedTransaction>(tx: T): Promise<T> {
+    if ('partialSign' in tx) {
+      (tx as Transaction).partialSign(this.payer);
+    } else {
+      (tx as VersionedTransaction).sign([this.payer]);
+    }
+    return tx;
+  }
+  async signAllTransactions<T extends Transaction | VersionedTransaction>(
+    txs: T[],
+  ): Promise<T[]> {
+    return Promise.all(txs.map((t) => this.signTransaction(t)));
+  }
+}
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import idl from '@chickenpicks/anchor-client/idl' with { type: 'json' };
@@ -58,7 +86,7 @@ export function getAdminProgram(): {
 } {
   const deployer = loadDeployer();
   const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
-  const provider = new AnchorProvider(connection, new Wallet(deployer), {
+  const provider = new AnchorProvider(connection, new KeypairWallet(deployer), {
     commitment: 'confirmed',
   });
   const program = new Program(idl as Idl, provider);

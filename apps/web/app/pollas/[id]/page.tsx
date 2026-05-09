@@ -271,7 +271,8 @@ export default function PollaDetailPage() {
         userPubkey,
       );
 
-      const sig = await program.methods
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sig = await (program.methods as any)
         .joinPolla()
         .accounts({
           polla: pollaPubkey,
@@ -337,7 +338,8 @@ export default function PollaDetailPage() {
         }
       }
 
-      const sig = await program.methods
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sig = await (program.methods as any)
         .submitPrediction(fullScores)
         .accounts({
           polla: pollaPubkey,
@@ -392,7 +394,8 @@ export default function PollaDetailPage() {
         userPubkey,
       );
 
-      const sig = await program.methods
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sig = await (program.methods as any)
         .claimPrize()
         .accounts({
           polla: pollaPubkey,
@@ -457,7 +460,8 @@ export default function PollaDetailPage() {
         programId,
       );
       const userUsdcAta = getAssociatedTokenAddressSync(usdcMintKey, userPubkey);
-      const sig = await program.methods
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sig = await (program.methods as any)
         .joinPolla()
         .accounts({
           polla: pollaPubkey,
@@ -596,7 +600,8 @@ export default function PollaDetailPage() {
             fullScores.push({ home: -1, away: -1 });
           }
         }
-        const sig = await program.methods
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sig = await (program.methods as any)
           .submitPrediction(fullScores)
           .accounts({
             polla: pollaPubkey,
@@ -722,7 +727,7 @@ export default function PollaDetailPage() {
     const poolAfterFee = polla.totalPool.muln(9500).divn(10000);
     const active = Math.min(polla.numParticipants, polla.prizeDistribution.length);
     let denom = 0;
-    for (let i = 0; i < active; i++) denom += polla.prizeDistribution[i];
+    for (let i = 0; i < active; i++) denom += polla.prizeDistribution[i] ?? 0;
     if (denom === 0) return null;
     const payout = poolAfterFee.muln(sharePct).divn(denom);
     return { sharePct, payout, denom };
