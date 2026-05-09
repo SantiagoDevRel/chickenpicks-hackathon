@@ -35,7 +35,7 @@ const IDL_PATH = path.join(
 
 // Polla name can be overridden via CLI arg so we can seed multiple distinct
 // pools for testing without hitting the idempotent "already exists" guard.
-const POLLA_NAME = process.argv[2] ?? 'WC2026 Test Group';
+const POLLA_NAME = process.argv[2] ?? 'World Cup with Friends';
 const TOURNAMENT = 'World Cup 2026';
 const ENTRY_AMOUNT = new BN(1_000_000); // 1 USDC (6 decimals)
 const PRIZE_DISTRIBUTION = [50, 30, 20, 0, 0, 0, 0, 0, 0, 0];
