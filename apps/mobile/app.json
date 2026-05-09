@@ -55,11 +55,11 @@
       "eas": {
         "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
       },
-      "privyAppId": "REPLACE_WITH_PRIVY_APP_ID",
-      "privyClientId": "REPLACE_WITH_PRIVY_CLIENT_ID",
+      "privyAppId": "cmoxe0k3200fr0ck1s4qyiquc",
+      "privyClientId": "client-WY6YiXfBEkoNKK9JCEeXLCrDVJQBGd3xuDYSvUZ8n2akn",
       "solanaRpcUrl": "https://api.devnet.solana.com",
       "programId": "Cdd53o33BTaZcmpZ55TemGPmZRR2mbMiYDEU6Mecb3ut",
-      "usdcMint": "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr"
+      "usdcMint": "sWjZfTkMM2zbNBx1YwgYGmsXfZpA1yo5HkhSqB9AUXC"
     }
   }
 }
