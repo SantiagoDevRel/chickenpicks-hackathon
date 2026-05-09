@@ -423,15 +423,18 @@ export default function PollaDetailPage() {
 
   const handleVoiceOpenBridge = useCallback(
     async (p: { fromChain?: number; fromToken?: string; amount?: string }) => {
+      // Default to the pool's entry amount when the agent doesn't pass one —
+      // user shouldn't have to repeat what the pool already says.
+      const fallbackAmount = polla ? formatUsdc(polla.entryAmount) : undefined;
       setBridgeState({
         kind: 'open',
         fromChain: p.fromChain,
         fromToken: p.fromToken,
-        amount: p.amount,
+        amount: p.amount ?? fallbackAmount,
       });
       return { opened: true };
     },
-    [],
+    [polla],
   );
 
   // ─── Voice → join confirm modal → join_polla flow ──────────────────────
