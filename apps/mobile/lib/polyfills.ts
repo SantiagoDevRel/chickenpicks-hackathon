@@ -5,5 +5,4 @@ import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
 import { Buffer } from 'buffer';
 
-// @ts-expect-error — global Buffer
 global.Buffer = global.Buffer || Buffer;

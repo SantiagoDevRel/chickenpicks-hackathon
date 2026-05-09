@@ -33,18 +33,19 @@ export default function RootLayout() {
         <PrivyProvider
           appId={PRIVY_APP_ID}
           clientId={PRIVY_CLIENT_ID}
+          // Cast: @privy-io/expo's PrivyConfig type doesn't formally expose
+          // solanaClusters in this version, but the runtime accepts it (mirrors
+          // the web SDK shape). Without this we'd default to mainnet.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           config={{
             embedded: {
               solana: {
                 createOnLogin: 'users-without-wallets',
               },
             },
-            // Devnet for the hackathon — flip to mainnet-beta for prod.
-            // The Privy RN SDK defaults to mainnet, so we override here.
-            // Note: this key path mirrors web; if the RN SDK uses a different
-            // shape in your installed version, adjust accordingly.
             solanaClusters: [{ name: 'devnet', rpcUrl: SOLANA_RPC_URL }],
-          }}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any}
         >
           <Stack
             screenOptions={{

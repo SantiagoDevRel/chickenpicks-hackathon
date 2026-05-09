@@ -30,7 +30,7 @@ export async function mwaConnect(): Promise<{
 }> {
   const result = await transact(async (wallet: Web3MobileWallet) => {
     const auth = await wallet.authorize({
-      cluster: 'solana:devnet',
+      chain: 'solana:devnet',
       identity: APP_IDENTITY,
     });
     const account = auth.accounts[0];

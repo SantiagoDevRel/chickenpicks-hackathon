@@ -70,7 +70,7 @@ export default function ProfileScreen() {
             preds.map(({ account }: { account: any }) => account.polla.toBase58()),
           ),
         );
-        const pollaPdas = pollaKeys.map((k) => new PublicKey(k));
+        const pollaPdas = (pollaKeys as string[]).map((k) => new PublicKey(k));
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const pollas = await (program.account as any).polla.fetchMultiple(pollaPdas);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
