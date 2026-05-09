@@ -59,8 +59,11 @@ export function VoiceAgent({
   pollaPubkey?: string;
   onVoiceSubmitPicks?: (
     scores: { home: number; away: number }[],
+    verballyConfirmed: boolean,
   ) => Promise<{ ok: boolean; sig?: string; error?: string }>;
-  onVoiceJoinPool?: () => Promise<{
+  onVoiceJoinPool?: (
+    verballyConfirmed: boolean,
+  ) => Promise<{
     ok: boolean;
     sig?: string;
     error?: string;
@@ -173,18 +176,23 @@ export function VoiceAgent({
         };
       },
 
-      // ─── join_pool: voice → join confirm modal → on-chain join ─────────
-      // Same pattern as submit_picks: parent owns the modal + signing,
-      // we dispatch and await its result. No params — joins the pool the
-      // user is currently viewing.
-      join_pool: async () => {
+      // ─── join_pool: voice → on-chain join (modal as fallback) ──────────
+      // Voice-only flow: when verbally_confirmed=true the agent has already
+      // asked "are you sure?" and the user said yes — the tool fires the
+      // tx straight from the wallet, no popup. With verbally_confirmed=false
+      // (or missing) the modal still pops as a safety net.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      join_pool: async (params: any) => {
         if (!onVoiceJoinPool) {
           return {
             status: 'error',
             error: 'Join not available — open a specific pool page first.',
           };
         }
-        const result = await onVoiceJoinPool();
+        const verbally =
+          params?.verbally_confirmed === true ||
+          params?.verbally_confirmed === 'true';
+        const result = await onVoiceJoinPool(verbally);
         if (result.ok) {
           return { status: 'joined', tx_signature: result.sig };
         }
@@ -244,7 +252,10 @@ export function VoiceAgent({
         if (normalized.length === 0) {
           return { status: 'error', error: 'Empty scores list.' };
         }
-        const result = await onVoiceSubmitPicks(normalized);
+        const verbally =
+          params?.verbally_confirmed === true ||
+          params?.verbally_confirmed === 'true';
+        const result = await onVoiceSubmitPicks(normalized, verbally);
         if (result.ok) {
           return { status: 'submitted', tx_signature: result.sig };
         }

@@ -420,42 +420,14 @@ export default function PollaDetailPage() {
     ((result: { ok: boolean; sig?: string; error?: string }) => void) | null
   >(null);
 
-  const handleVoiceJoin = useCallback(async (): Promise<{
+  const executeJoin = useCallback(async (): Promise<{
     ok: boolean;
     sig?: string;
     error?: string;
   }> => {
-    if (!polla) {
-      return { ok: false, error: 'Pool not loaded yet.' };
+    if (!polla || !pollaPubkey || !wallet || !userPubkey) {
+      return { ok: false, error: 'Not ready.' };
     }
-    if (prediction) {
-      return {
-        ok: false,
-        error: 'You already joined this pool — go ahead and submit your picks.',
-      };
-    }
-    if (statusKey(polla.status) !== 'OPEN') {
-      return { ok: false, error: 'This pool is not accepting joins anymore.' };
-    }
-    if (!authenticated || !userPubkey) {
-      return { ok: false, error: 'Please sign in first.' };
-    }
-    setJoinConfirmState({
-      kind: 'open',
-      poolName: decodeFixedString(polla.name),
-      tournament: decodeFixedString(polla.tournament),
-      entryUsdc: formatUsdc(polla.entryAmount),
-    });
-    return new Promise((resolve) => {
-      joinResolverRef.current = resolve;
-    });
-  }, [polla, prediction, authenticated, userPubkey]);
-
-  async function confirmVoiceJoin() {
-    if (!polla || !pollaPubkey || !wallet || !userPubkey) return;
-    if (joinConfirmState.kind !== 'open' && joinConfirmState.kind !== 'error') return;
-    const snapshot = joinConfirmState;
-    setJoinConfirmState({ kind: 'busy' });
     try {
       const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -485,7 +457,6 @@ export default function PollaDetailPage() {
         programId,
       );
       const userUsdcAta = getAssociatedTokenAddressSync(usdcMintKey, userPubkey);
-
       const sig = await program.methods
         .joinPolla()
         .accounts({
@@ -498,24 +469,85 @@ export default function PollaDetailPage() {
           systemProgram: SystemProgram.programId,
         })
         .rpc();
-
       setLastSig(sig);
-      setJoinConfirmState({ kind: 'idle' });
       refreshAll();
-      joinResolverRef.current?.({ ok: true, sig });
-      joinResolverRef.current = null;
+      return { ok: true, sig };
     } catch (e) {
+      return { ok: false, error: (e as Error).message };
+    }
+  }, [polla, pollaPubkey, wallet, userPubkey, refreshAll]);
+
+  const handleVoiceJoin = useCallback(
+    async (verballyConfirmed: boolean): Promise<{
+      ok: boolean;
+      sig?: string;
+      error?: string;
+    }> => {
+      if (!polla) return { ok: false, error: 'Pool not loaded yet.' };
+      if (prediction) {
+        return {
+          ok: false,
+          error:
+            'You already joined this pool — go ahead and submit your picks.',
+        };
+      }
+      if (statusKey(polla.status) !== 'OPEN') {
+        return { ok: false, error: 'This pool is not accepting joins.' };
+      }
+      if (!authenticated || !userPubkey) {
+        return { ok: false, error: 'Please sign in first.' };
+      }
+
+      // Voice-only path: agent already verbally confirmed with the user,
+      // skip the visual modal and fire the tx straight from the wallet.
+      if (verballyConfirmed) {
+        setJoinConfirmState({ kind: 'busy' });
+        const result = await executeJoin();
+        if (result.ok) {
+          setJoinConfirmState({ kind: 'idle' });
+        } else {
+          setJoinConfirmState({
+            kind: 'error',
+            poolName: decodeFixedString(polla.name),
+            tournament: decodeFixedString(polla.tournament),
+            entryUsdc: formatUsdc(polla.entryAmount),
+            message: result.error ?? 'Tx failed.',
+          });
+        }
+        return result;
+      }
+
+      // Fallback: visual modal confirms before signing.
+      setJoinConfirmState({
+        kind: 'open',
+        poolName: decodeFixedString(polla.name),
+        tournament: decodeFixedString(polla.tournament),
+        entryUsdc: formatUsdc(polla.entryAmount),
+      });
+      return new Promise((resolve) => {
+        joinResolverRef.current = resolve;
+      });
+    },
+    [polla, prediction, authenticated, userPubkey, executeJoin],
+  );
+
+  async function confirmVoiceJoin() {
+    if (joinConfirmState.kind !== 'open' && joinConfirmState.kind !== 'error') return;
+    const snapshot = joinConfirmState;
+    setJoinConfirmState({ kind: 'busy' });
+    const result = await executeJoin();
+    if (result.ok) {
+      setJoinConfirmState({ kind: 'idle' });
+      joinResolverRef.current?.({ ok: true, sig: result.sig });
+      joinResolverRef.current = null;
+    } else {
       setJoinConfirmState({
         kind: 'error',
-        poolName:
-          'poolName' in snapshot ? snapshot.poolName : '',
-        tournament:
-          'tournament' in snapshot ? snapshot.tournament : '',
-        entryUsdc:
-          'entryUsdc' in snapshot ? snapshot.entryUsdc : '',
-        message: (e as Error).message,
+        poolName: 'poolName' in snapshot ? snapshot.poolName : '',
+        tournament: 'tournament' in snapshot ? snapshot.tournament : '',
+        entryUsdc: 'entryUsdc' in snapshot ? snapshot.entryUsdc : '',
+        message: result.error ?? 'Tx failed.',
       });
-      // Don't resolve yet — let user retry or cancel
     }
   }
 
@@ -535,13 +567,86 @@ export default function PollaDetailPage() {
     ((result: { ok: boolean; sig?: string; error?: string }) => void) | null
   >(null);
 
+  const executeSubmitPicks = useCallback(
+    async (
+      proposed: ProposedPick[],
+    ): Promise<{ ok: boolean; sig?: string; error?: string }> => {
+      if (!pollaPubkey || !polla || !wallet || !userPubkey) {
+        return { ok: false, error: 'Not ready.' };
+      }
+      try {
+        const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const adaptedWallet: any = {
+          publicKey: userPubkey,
+          signTransaction: async (tx: unknown) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return await (wallet as any).signTransaction(tx);
+          },
+          signAllTransactions: async (txs: unknown[]) => {
+            return Promise.all(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              txs.map((tx) => (wallet as any).signTransaction(tx)),
+            );
+          },
+        };
+        const provider = new AnchorProvider(conn, adaptedWallet, {
+          commitment: 'confirmed',
+        });
+        const program = new Program(idl as Idl, provider);
+        const [predPda] = PublicKey.findProgramAddressSync(
+          [
+            new TextEncoder().encode('prediction'),
+            pollaPubkey.toBuffer(),
+            userPubkey.toBuffer(),
+          ],
+          programId,
+        );
+        const fullScores: { home: number; away: number }[] = [];
+        for (let i = 0; i < 10; i++) {
+          const p = proposed.find((pp) => pp.matchIndex === i);
+          if (p) {
+            fullScores.push({ home: p.homeScore, away: p.awayScore });
+          } else {
+            fullScores.push({ home: -1, away: -1 });
+          }
+        }
+        const sig = await program.methods
+          .submitPrediction(fullScores)
+          .accounts({
+            polla: pollaPubkey,
+            prediction: predPda,
+            predictor: userPubkey,
+          })
+          .rpc();
+        setLastSig(sig);
+        // Sync visible inputs
+        const newScores = matches.map((_, i) => {
+          const p = proposed.find((pp) => pp.matchIndex === i);
+          return p
+            ? { home: p.homeScore.toString(), away: p.awayScore.toString() }
+            : { home: '', away: '' };
+        });
+        setScores(newScores);
+        refreshAll();
+        return { ok: true, sig };
+      } catch (e) {
+        return { ok: false, error: (e as Error).message };
+      }
+    },
+    [pollaPubkey, polla, wallet, userPubkey, matches, refreshAll],
+  );
+
   const handleVoiceSubmit = useCallback(
     async (
       voiceScores: { home: number; away: number }[],
+      verballyConfirmed: boolean,
     ): Promise<{ ok: boolean; sig?: string; error?: string }> => {
-      // Need polla + matches loaded + user authenticated
       if (!polla || matches.length === 0) {
-        return { ok: false, error: 'Pool not loaded yet — try again in a moment.' };
+        return {
+          ok: false,
+          error: 'Pool not loaded yet — try again in a moment.',
+        };
       }
       if (!authenticated || !userPubkey || !prediction) {
         return {
@@ -549,7 +654,6 @@ export default function PollaDetailPage() {
           error: 'Please join the pool first before saving picks by voice.',
         };
       }
-      // Pad / truncate to match count
       const proposed: ProposedPick[] = matches.map((m, i) => {
         const v = voiceScores[i];
         return {
@@ -560,90 +664,47 @@ export default function PollaDetailPage() {
           awayScore: v && Number.isFinite(v.away) ? v.away : 0,
         };
       });
+
+      // Voice-only path: agent confirmed verbally, skip the modal.
+      if (verballyConfirmed) {
+        setConfirmState({ kind: 'busy' });
+        const result = await executeSubmitPicks(proposed);
+        if (result.ok) {
+          setConfirmState({ kind: 'idle' });
+        } else {
+          setConfirmState({
+            kind: 'error',
+            picks: proposed,
+            message: result.error ?? 'Tx failed.',
+          });
+        }
+        return result;
+      }
+
+      // Fallback: visual modal flow.
       setConfirmState({ kind: 'open', picks: proposed });
       return new Promise((resolve) => {
         voiceResolverRef.current = resolve;
       });
     },
-    [polla, matches, authenticated, userPubkey, prediction],
+    [polla, matches, authenticated, userPubkey, prediction, executeSubmitPicks],
   );
 
   async function confirmVoicePicks() {
     if (confirmState.kind !== 'open' && confirmState.kind !== 'error') return;
     const picks = confirmState.picks;
     setConfirmState({ kind: 'busy' });
-
-    // Sync the visible inputs so the page reflects the picks too
-    const newScores = matches.map((_, i) => {
-      const p = picks.find((pp) => pp.matchIndex === i);
-      return p
-        ? { home: p.homeScore.toString(), away: p.awayScore.toString() }
-        : { home: '', away: '' };
-    });
-    setScores(newScores);
-
-    try {
-      // Reuse submitPrediction but with explicit scores (it reads from
-      // the `scores` state we just set, but state may not be flushed yet,
-      // so build the payload directly).
-      if (!pollaPubkey || !polla || !wallet || !userPubkey) {
-        throw new Error('Not ready');
-      }
-      const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const adaptedWallet: any = {
-        publicKey: userPubkey,
-        signTransaction: async (tx: unknown) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return await (wallet as any).signTransaction(tx);
-        },
-        signAllTransactions: async (txs: unknown[]) => {
-          return Promise.all(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            txs.map((tx) => (wallet as any).signTransaction(tx)),
-          );
-        },
-      };
-      const provider = new AnchorProvider(conn, adaptedWallet, {
-        commitment: 'confirmed',
-      });
-      const program = new Program(idl as Idl, provider);
-      const [predPda] = PublicKey.findProgramAddressSync(
-        [
-          new TextEncoder().encode('prediction'),
-          pollaPubkey.toBuffer(),
-          userPubkey.toBuffer(),
-        ],
-        programId,
-      );
-      const fullScores: { home: number; away: number }[] = [];
-      for (let i = 0; i < 10; i++) {
-        const p = picks.find((pp) => pp.matchIndex === i);
-        if (p) {
-          fullScores.push({ home: p.homeScore, away: p.awayScore });
-        } else {
-          fullScores.push({ home: -1, away: -1 });
-        }
-      }
-
-      const sig = await program.methods
-        .submitPrediction(fullScores)
-        .accounts({
-          polla: pollaPubkey,
-          prediction: predPda,
-          predictor: userPubkey,
-        })
-        .rpc();
-
-      setLastSig(sig);
+    const result = await executeSubmitPicks(picks);
+    if (result.ok) {
       setConfirmState({ kind: 'idle' });
-      refreshAll();
-      voiceResolverRef.current?.({ ok: true, sig });
+      voiceResolverRef.current?.({ ok: true, sig: result.sig });
       voiceResolverRef.current = null;
-    } catch (e) {
-      const msg = (e as Error).message;
-      setConfirmState({ kind: 'error', picks, message: msg });
-      // Don't resolve yet — let user retry or cancel
+    } else {
+      setConfirmState({
+        kind: 'error',
+        picks,
+        message: result.error ?? 'Tx failed.',
+      });
     }
   }
 
