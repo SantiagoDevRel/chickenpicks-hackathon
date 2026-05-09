@@ -64,6 +64,34 @@ export function VoiceAgent({
   const wallet = wallets[0];
   const [error, setError] = useState<string | null>(null);
 
+  // Pulled out so we can register both list_pools (new) and list_pollas
+  // (legacy) names against the same implementation.
+  const listPoolsImpl = async () => {
+    const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
+    const provider = new AnchorProvider(conn, READ_ONLY_WALLET, {
+      commitment: 'confirmed',
+    });
+    const program = new Program(idl as Idl, provider);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const accounts = await (program.account as any).polla.all();
+    const configuredMint = new PublicKey(USDC_MINT);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return accounts
+      .filter(({ account }: { account: any }) =>
+        account.usdcMint.equals(configuredMint),
+      )
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map(({ publicKey, account }: any) => ({
+        id: publicKey.toBase58(),
+        name: decodeFixedString(account.name),
+        tournament: decodeFixedString(account.tournament),
+        entry_usdc: Number(account.entryAmount.toString()) / 10 ** USDC_DECIMALS,
+        num_matches: account.numMatches,
+        num_participants: account.numParticipants,
+        status: Object.keys(account.status)[0],
+      }));
+  };
+
   const conversation = useConversation({
     onConnect: () => setError(null),
     onError: (e: unknown) =>
@@ -73,32 +101,23 @@ export function VoiceAgent({
           : (e as { message?: string })?.message ?? 'Connection error',
       ),
     clientTools: {
-      // ─── list_pollas: returns OPEN pollas with the configured mint ──────
-      list_pools: async () => {
-        const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
-        const provider = new AnchorProvider(conn, READ_ONLY_WALLET, {
-          commitment: 'confirmed',
-        });
-        const program = new Program(idl as Idl, provider);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const accounts = await (program.account as any).polla.all();
-        const configuredMint = new PublicKey(USDC_MINT);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return accounts
-          .filter(({ account }: { account: any }) =>
-            account.usdcMint.equals(configuredMint),
-          )
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .map(({ publicKey, account }: any) => ({
-            id: publicKey.toBase58(),
-            name: decodeFixedString(account.name),
-            tournament: decodeFixedString(account.tournament),
-            entry_usdc: Number(account.entryAmount.toString()) / 10 ** USDC_DECIMALS,
-            num_matches: account.numMatches,
-            num_participants: account.numParticipants,
-            status: Object.keys(account.status)[0],
-          }));
+      // ─── get_current_pool: tells the agent which pool the user is on ───
+      get_current_pool: async () => {
+        if (!pollaPubkey) {
+          return {
+            current_pool_id: null,
+            on_pool_page: false,
+            message: 'User is on the pools list, not a specific pool yet.',
+          };
+        }
+        return { current_pool_id: pollaPubkey, on_pool_page: true };
       },
+
+      // ─── list_pools / list_pollas: returns OPEN pools with the mint ────
+      list_pools: listPoolsImpl,
+      // legacy alias — old agent configs in the dashboard may still use the
+      // pre-rename name. Both call the same function so either works.
+      list_pollas: listPoolsImpl,
 
       // ─── get_polla_details: matches list for a given polla ──────────────
       get_pool_details: async ({ polla_id }: { polla_id: string }) => {
