@@ -82,7 +82,7 @@ A fully on-chain football prediction market on Solana. Built for the Dev3pack 20
 If you're picking this up to extend:
 
 - The user is `Santiago Trujillo` (`santiagotrujillozuluaga@gmail.com`). Hackathon admin email allowlisted: `santiagodevrel1@gmail.com`.
-- The user's main production product (separate repo, NOT this one) is `la-polla` — same scoring rule (5/3/2/0) ported here. Don't touch la-polla.
+- The user's main production product (separate repo, NOT this one) is `la-polla` — uses 5/3/2/0/1 scoring. ChickenPicks deliberately ships a simplified 5/3/0 (exact / correct outcome / wrong). Don't touch la-polla.
 - WSL2 Ubuntu is the dev environment for Anchor / Solana CLI / Expo CLI. Windows side has Node + pnpm + Vercel/EAS MCPs.
 - Vercel deploys auto on push to `main`. EAS builds trigger via `pnpm submit:dapp-store` or manually via the helper at `scripts/eas-trigger.sh`.
 - See `~/.claude/CLAUDE.md` for global rules: verify locally before pushing, stop guessing after 2 failed iterations, etc.

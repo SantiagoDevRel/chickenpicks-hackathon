@@ -1,0 +1,437 @@
+// apps/web/app/crear/page.tsx
+//
+// "Crear nueva polla" — 3-step wizard. Mirrors la-polla's UX:
+//   1. Info        → name + tournament
+//   2. Partidos    → fixture picker fed by /api/espn/fixtures
+//   3. Configuración → entry amount + prize tiers, submit on-chain
+//
+// On-chain authority model (important):
+//   - The Anchor program's `create_polla` and `add_match` only require the
+//     pool's *creator* (whoever signs) — there is no platform-authority gate
+//     on these instructions. See:
+//       programs/.../src/instructions/create_polla.rs (line 33: `pub creator: Signer`)
+//       programs/.../src/instructions/add_match.rs    (has_one = creator)
+//     So this wizard signs everything with the user's Privy embedded wallet.
+//     The user pays SOL rent for the polla PDA + each match account.
+//
+//   - The /api/admin/create-polla endpoint scaffold exists for the case where
+//     we want to migrate to a "platform-creates, user-funds" model (e.g. to
+//     hide rent costs from the user) — but it's TODO and not used by this
+//     wizard today.
+//
+// Submit flow:
+//   1. Build name [u8;32] and tournament [u8;32] padded buffers.
+//   2. Derive polla PDA with seeds [b"polla", creator.toBuffer(), name].
+//   3. Compute the vault ATA off-curve.
+//   4. createPolla(name, tournament, entryAmount, numMatches, prizeDistribution).
+//   5. For each selected fixture, derive match PDA + send addMatch(idx, home, away).
+//   6. On success, redirect to /pollas/<polla>.
+//
+// Privy + Anchor wiring lives at the top of the file (mirrors the pattern in
+// apps/web/app/pollas/[id]/page.tsx — same `adaptedWallet` shim because Privy
+// returns a slightly different wallet shape than Anchor's `Wallet`).
+//
+// Edge cases worth knowing:
+//   - Privy embedded wallet may not be funded with SOL on first use. We don't
+//     handle airdrop here — the tx will fail with "insufficient funds" and the
+//     user sees the raw error. Future: detect that error and show a helpful
+//     CTA. (TODO comment near the catch block.)
+//   - `add_match` errors don't roll back the `create_polla` because we send
+//     them as separate txs. If the user partially succeeds they'll see a polla
+//     with fewer matches than expected. We surface this in the error UI and
+//     offer a "Continue adding matches" button. (TODO — basic for now.)
+
+'use client';
+
+import { useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import {
+  AnchorProvider,
+  BN,
+  Program,
+  type Idl,
+} from '@coral-xyz/anchor';
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddressSync,
+} from '@solana/spl-token';
+import { Connection, PublicKey, SystemProgram } from '@solana/web3.js';
+import { usePrivy } from '@privy-io/react-auth';
+import { useSolanaWallets } from '@privy-io/react-auth/solana';
+import idl from '@chickenpicks/anchor-client/idl' with { type: 'json' };
+import {
+  MAX_PRIZE_TIERS,
+  PROGRAM_ID,
+  SOLANA_RPC_URL,
+  USDC_DECIMALS,
+  USDC_MINT,
+} from '@chickenpicks/shared';
+
+import { BrandHeader } from '@/components/BrandHeader';
+import { ProgressChips, type WizardStep } from '@/components/CrearPolla/ProgressChips';
+import { Step1Info, type Step1Value } from '@/components/CrearPolla/Step1Info';
+import {
+  Step2Matches,
+  defaultStep2,
+  type Step2Value,
+} from '@/components/CrearPolla/Step2Matches';
+import {
+  Step3Prizes,
+  defaultStep3,
+  tiersAreValid,
+  type Step3Value,
+} from '@/components/CrearPolla/Step3Prizes';
+import { getTournament } from '@/lib/espn/tournaments';
+
+const programId = new PublicKey(PROGRAM_ID);
+const usdcMintKey = new PublicKey(USDC_MINT);
+
+// --- Helpers -----------------------------------------------------------------
+
+/** Pad/truncate a UTF-8 string to exactly `len` bytes. Used for both polla.name
+ *  ([u8;32]) and match.home_team / match.away_team ([u8;16]). */
+function padToBytes(s: string, len: number): number[] {
+  const buf = new Uint8Array(len);
+  const enc = new TextEncoder().encode(s);
+  buf.set(enc.subarray(0, Math.min(enc.length, len)), 0);
+  return Array.from(buf);
+}
+
+/** Build the polla PDA from seeds [b"polla", creator, name] — same logic as
+ *  the on-chain seeds in create_polla.rs. */
+function pollaPda(creator: PublicKey, name32: number[]): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [
+      new TextEncoder().encode('polla'),
+      creator.toBuffer(),
+      Uint8Array.from(name32),
+    ],
+    programId,
+  );
+  return pda;
+}
+
+function matchPda(polla: PublicKey, idx: number): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [new TextEncoder().encode('match'), polla.toBuffer(), Uint8Array.from([idx])],
+    programId,
+  );
+  return pda;
+}
+
+/** Convert a decimal USDC string ("1.50") to a base-units BN respecting the
+ *  6-decimal USDC convention. Floors anything past 6 decimals. */
+function usdcToBaseUnits(amount: string): BN {
+  const [whole, fracRaw = ''] = amount.split('.');
+  const frac = (fracRaw + '000000').slice(0, USDC_DECIMALS);
+  const combined = `${whole || '0'}${frac}`.replace(/^0+/, '') || '0';
+  return new BN(combined);
+}
+
+// --- Wizard state ------------------------------------------------------------
+
+type SubmitStatus = {
+  busy: boolean;
+  error: string | null;
+  txSig: string | null;
+};
+
+export default function CrearPollaPage() {
+  const router = useRouter();
+  const { authenticated, ready, login } = usePrivy();
+  const { wallets } = useSolanaWallets();
+  const wallet = wallets[0];
+  const userPubkey = useMemo(() => {
+    if (!wallet?.address) return null;
+    try {
+      return new PublicKey(wallet.address);
+    } catch {
+      return null;
+    }
+  }, [wallet?.address]);
+
+  const [step, setStep] = useState<WizardStep>(1);
+
+  const [step1, setStep1] = useState<Step1Value>({
+    name: '',
+    tournamentId: null,
+  });
+  const [step2, setStep2] = useState<Step2Value>(defaultStep2());
+  const [step3, setStep3] = useState<Step3Value>(defaultStep3());
+  const [submit, setSubmit] = useState<SubmitStatus>({
+    busy: false,
+    error: null,
+    txSig: null,
+  });
+
+  // Used to disable the wizard if the page is in the middle of submitting —
+  // we don't want the user to navigate steps mid-tx.
+  const submitInFlight = useRef(false);
+
+  function onCancel() {
+    if (submitInFlight.current) return;
+    router.push('/pollas');
+  }
+
+  // --- Step 1 → 2 ----------------------------------------------------------
+  function goToStep2() {
+    if (!step1.name.trim() || !step1.tournamentId) return;
+    setStep(2);
+  }
+
+  // --- Step 2 → 3 ----------------------------------------------------------
+  function goToStep3() {
+    if (step2.selected.length < 1) return;
+    setStep(3);
+  }
+
+  // --- Step 3 submit -------------------------------------------------------
+  async function handleSubmit() {
+    if (submit.busy) return;
+    if (!ready || !authenticated || !userPubkey || !wallet) {
+      setSubmit({
+        busy: false,
+        error: 'Sign in con email para crear la polla.',
+        txSig: null,
+      });
+      return;
+    }
+    if (!tiersAreValid(step3.tiers)) {
+      setSubmit({
+        busy: false,
+        error: 'Los premios deben sumar exactamente 100%.',
+        txSig: null,
+      });
+      return;
+    }
+    const entryNum = Number(step3.entryUsdc);
+    if (!Number.isFinite(entryNum) || entryNum <= 0) {
+      setSubmit({
+        busy: false,
+        error: 'El monto de entrada debe ser mayor a 0.',
+        txSig: null,
+      });
+      return;
+    }
+    if (step2.selected.length < 1) {
+      setSubmit({
+        busy: false,
+        error: 'Volvé al paso 2 y elegí al menos 1 partido.',
+        txSig: null,
+      });
+      return;
+    }
+    const tournament = step1.tournamentId
+      ? getTournament(step1.tournamentId)
+      : null;
+    if (!tournament) {
+      setSubmit({
+        busy: false,
+        error: 'Volvé al paso 1 y elegí un torneo.',
+        txSig: null,
+      });
+      return;
+    }
+
+    submitInFlight.current = true;
+    setSubmit({ busy: true, error: null, txSig: null });
+    try {
+      const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
+      // Privy's Solana wallet returns a different shape than Anchor expects.
+      // This adapter mirrors the one in apps/web/app/pollas/[id]/page.tsx.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adaptedWallet: any = {
+        publicKey: userPubkey,
+        signTransaction: async (tx: unknown) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return await (wallet as any).signTransaction(tx);
+        },
+        signAllTransactions: async (txs: unknown[]) => {
+          return Promise.all(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            txs.map((tx) => (wallet as any).signTransaction(tx)),
+          );
+        },
+      };
+      const provider = new AnchorProvider(conn, adaptedWallet, {
+        commitment: 'confirmed',
+      });
+      const program = new Program(idl as Idl, provider);
+
+      // Build inputs.
+      // We use the tournament *name* (not slug) on-chain to keep the existing
+      // /pollas listing readable. Slug is what the picker uses internally.
+      const nameBytes = padToBytes(step1.name.trim(), 32);
+      const tournamentBytes = padToBytes(tournament.name, 32);
+      const entryAmount = usdcToBaseUnits(step3.entryUsdc);
+      const numMatches = step2.selected.length;
+
+      // Pad prize_distribution to exactly MAX_PRIZE_TIERS slots.
+      const prizeDistribution: number[] = [];
+      for (let i = 0; i < MAX_PRIZE_TIERS; i++) {
+        prizeDistribution.push(step3.tiers[i] ?? 0);
+      }
+
+      const polla = pollaPda(userPubkey, nameBytes);
+      const vault = getAssociatedTokenAddressSync(usdcMintKey, polla, true);
+
+      // 1) create_polla
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const createSig = await (program.methods as any)
+        .createPolla(
+          nameBytes,
+          tournamentBytes,
+          entryAmount,
+          numMatches,
+          prizeDistribution,
+        )
+        .accounts({
+          polla,
+          usdcMint: usdcMintKey,
+          vault,
+          creator: userPubkey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      // 2) add_match × N (sequential — they share the same `creator` signer
+      //    and order matters because polla.num_matches is checked per-call).
+      for (let i = 0; i < step2.selected.length; i++) {
+        const fix = step2.selected[i];
+        if (!fix) continue;
+        const homeBytes = padToBytes(fix.homeTeam, 16);
+        const awayBytes = padToBytes(fix.awayTeam, 16);
+        const matchAccount = matchPda(polla, i);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (program.methods as any)
+          .addMatch(i, homeBytes, awayBytes)
+          .accounts({
+            polla,
+            matchAccount,
+            creator: userPubkey,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+      }
+
+      setSubmit({ busy: false, error: null, txSig: createSig });
+
+      // Tiny delay so the user can see the success toast before we redirect.
+      setTimeout(() => {
+        router.push(`/pollas/${polla.toBase58()}`);
+      }, 900);
+    } catch (e) {
+      // TODO: detect "insufficient funds for rent" specifically and surface a
+      // helpful CTA pointing the user at a SOL faucet. For now the raw chain
+      // error message is shown verbatim.
+      setSubmit({
+        busy: false,
+        error: (e as Error).message ?? 'Tx failed.',
+        txSig: null,
+      });
+    } finally {
+      submitInFlight.current = false;
+    }
+  }
+
+  // --- Render --------------------------------------------------------------
+
+  return (
+    <main className="min-h-screen pb-12">
+      <BrandHeader />
+
+      <div className="mx-auto max-w-md px-4 pt-6">
+        {/* Title row + back link */}
+        <div className="flex items-center gap-3 mb-5">
+          <Link
+            href="/pollas"
+            aria-label="Back to pools"
+            className="text-text-muted hover:text-text-primary transition text-2xl leading-none"
+          >
+            ←
+          </Link>
+          <h1 className="font-display tracking-[0.04em] text-2xl text-text-primary uppercase">
+            Crear nueva polla
+          </h1>
+        </div>
+
+        {/* Progress chips */}
+        <div className="mb-6">
+          <ProgressChips
+            current={step}
+            onJump={(s) => {
+              if (submit.busy) return;
+              if (s < step) setStep(s);
+            }}
+          />
+        </div>
+
+        {/* Auth gate — wizard is fully usable without sign-in until submit, but
+            we surface the gate up-front so the user knows they'll need an
+            embedded wallet at the end. */}
+        {ready && !authenticated && (
+          <div className="lp-card p-4 mb-5 flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/pollitos/Pollito_esperando.webp"
+              alt=""
+              width={36}
+              height={36}
+            />
+            <div className="flex-1">
+              <p className="text-xs text-amber font-display tracking-[0.04em]">
+                NECESITÁS LOGUEARTE PARA CREAR LA POLLA
+              </p>
+              <p className="text-[10px] text-text-muted mt-0.5">
+                Tu wallet embebida firma el create_polla on-chain.
+              </p>
+            </div>
+            <button
+              onClick={() => login()}
+              className="rounded-md bg-gold px-3 py-2 font-display tracking-[0.08em] text-[11px] text-black hover:bg-amber transition"
+            >
+              SIGN IN
+            </button>
+          </div>
+        )}
+
+        {/* Steps */}
+        {step === 1 && (
+          <Step1Info
+            value={step1}
+            onChange={setStep1}
+            onContinue={goToStep2}
+            onCancel={onCancel}
+          />
+        )}
+
+        {step === 2 && step1.tournamentId && (
+          <Step2Matches
+            tournamentId={step1.tournamentId}
+            value={step2}
+            onChange={setStep2}
+            onBack={() => setStep(1)}
+            onContinue={goToStep3}
+          />
+        )}
+
+        {step === 3 && (
+          <Step3Prizes
+            value={step3}
+            busy={submit.busy}
+            error={submit.error}
+            txSig={submit.txSig}
+            onChange={setStep3}
+            onBack={() => setStep(2)}
+            onCancel={onCancel}
+            onSubmit={handleSubmit}
+          />
+        )}
+      </div>
+    </main>
+  );
+}

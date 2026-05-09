@@ -1,20 +1,30 @@
-// Login / landing screen. Mirrors apps/web/app/page.tsx hero — same
-// chicken hero image, same gold/amber/turf wordmark, but adapted for RN.
-import { useState } from 'react';
-import { Pressable, Text, View, ScrollView, Platform } from 'react-native';
+// Login / landing screen. The gate before the tab nav.
+//
+// - When wallet is null → show hero + sign-in CTAs.
+// - When wallet is connected → auto-redirect to the (tabs) home.
+//
+// Mirrors apps/web/app/page.tsx hero — same chicken hero image, same
+// gold/amber/turf wordmark, but adapted for RN.
+import { useEffect } from 'react';
+import { Text, View, ScrollView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWallet } from '@/lib/useWallet';
 import { ConnectButton } from '@/components/ConnectButton';
-import { VoiceCoachModal } from '@/components/VoiceCoachModal';
 
 const heroChicken = require('../assets/pollitos/pollito_capitan_lider.webp');
 
 export default function LoginScreen() {
   const router = useRouter();
   const { wallet, ready } = useWallet();
-  const [coachVisible, setCoachVisible] = useState(false);
+
+  // Once a wallet is attached, jump straight into the tab nav.
+  useEffect(() => {
+    if (ready && wallet) {
+      router.replace('/(tabs)');
+    }
+  }, [ready, wallet, router]);
 
   return (
     <SafeAreaView className="flex-1 bg-bg-base">
@@ -63,37 +73,14 @@ export default function LoginScreen() {
             </View>
           )}
 
+          {/* When ready && wallet, the useEffect above redirects. We just
+              show a brief loading state here as a fallback. */}
           {ready && wallet && (
-            <View className="w-full items-center gap-4">
-              <ConnectButton />
-              <Pressable
-                onPress={() => router.push('/pools')}
-                className="rounded-md bg-gold px-8 py-4"
-              >
-                <Text className="font-display text-sm tracking-widest text-black">
-                  BROWSE POOLS →
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setCoachVisible(true)}
-                className="rounded-md border border-amber/50 bg-bg-card px-6 py-3"
-              >
-                <Text className="font-display text-xs tracking-widest text-amber">
-                  🎙  TALK TO COACH
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => router.push('/profile')}
-                className="rounded-md border border-border-default bg-bg-card px-6 py-3"
-              >
-                <Text className="font-display text-xs tracking-widest text-text-primary">
-                  MY PREDICTIONS
-                </Text>
-              </Pressable>
-            </View>
+            <Text className="font-display text-xs tracking-widest text-text-muted">
+              SIGNED IN — REDIRECTING…
+            </Text>
           )}
         </View>
-        <VoiceCoachModal visible={coachVisible} onClose={() => setCoachVisible(false)} />
 
         <View className="px-6 py-6 border-t border-border-subtle">
           <Text className="font-display text-[11px] tracking-widest text-text-muted text-center">

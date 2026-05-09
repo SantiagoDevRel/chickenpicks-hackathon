@@ -46,10 +46,9 @@ The vault is the polla's **associated token account** (`associated_token::author
 It then:
 
 1. Iterates matches, asserts `m.polla == polla.key()`, `m.settled == true`, and that match indices cover `0..N-1` with no gaps or duplicates (`InvalidMatchOrdering`).
-2. Iterates predictions, asserts `p.polla == polla.key()`, scores each one against the matches using the la-polla rule from [`scoring.rs`](../../programs/chickenpicks-onchain/programs/chickenpicks-onchain/src/scoring.rs):
+2. Iterates predictions, asserts `p.polla == polla.key()`, scores each one against the matches using the simplified rule from [`scoring.rs`](../../programs/chickenpicks-onchain/programs/chickenpicks-onchain/src/scoring.rs):
     - **5 pts** — exact scoreline.
-    - **3 pts** — correct goal-difference (and not exact).
-    - **2 pts** — correct winner only.
+    - **3 pts** — correct W/D/L outcome (any score).
     - **0 pts** — otherwise.
 3. Sorts predictions by `(points DESC, submitted_at_slot ASC)` (tie-break by submission order).
 4. Writes each prediction's `final_rank` (1-based for top tiers, `0xFF` for unranked) back via `p.exit(ctx.program_id)?`.

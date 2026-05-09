@@ -1,8 +1,7 @@
-// la-polla scoring rule, ported pure-Rust for on-chain execution.
+// ChickenPicks scoring rule (simplified from la-polla's 5/3/2/0/1):
 //
 //   - 5 pts: exact score (both home_score and away_score correct)
-//   - 3 pts: correct W/D/L outcome AND correct goal difference
-//   - 2 pts: correct W/D/L outcome only
+//   - 3 pts: correct W/D/L outcome (home win, draw, or away win) — any score
 //   - 0 pts: wrong outcome OR match unsettled OR prediction unset
 //
 // Tie-break across whole-polla totals is by earlier `submitted_at_slot` —
@@ -44,22 +43,18 @@ pub fn score_match(prediction: &PredictionScore, match_result: &Match) -> u32 {
         None => return 0,
     };
 
+    // Exact-score match → 5 pts.
     if prediction.home == match_result.home_score && prediction.away == match_result.away_score {
         return 5;
     }
 
-    if pred_outcome != actual_outcome {
-        return 0;
+    // Correct W/D/L outcome → 3 pts (regardless of goal difference).
+    if pred_outcome == actual_outcome {
+        return 3;
     }
 
-    let pred_diff = prediction.home as i32 - prediction.away as i32;
-    let actual_diff = match_result.home_score as i32 - match_result.away_score as i32;
-
-    if pred_diff == actual_diff {
-        3
-    } else {
-        2
-    }
+    // Wrong outcome → 0 pts.
+    0
 }
 
 #[cfg(test)]
@@ -91,22 +86,19 @@ mod tests {
     }
 
     #[test]
-    fn correct_outcome_and_diff_yields_3() {
-        // home win by 1 — predicted 2-1, actual 3-2
+    fn correct_outcome_yields_3() {
+        // Any correct W/D/L outcome (not exact) yields 3 — goal difference
+        // is no longer rewarded separately under the simplified 5/3/0 rule.
+        // home win — predicted 2-1, actual 3-2 (different score, same outcome)
         assert_eq!(score_match(&ps(2, 1), &m(3, 2, true)), 3);
-        // away win by 2 — predicted 0-2, actual 1-3
-        assert_eq!(score_match(&ps(0, 2), &m(1, 3, true)), 3);
+        // away win, different margin — predicted 0-2, actual 0-3
+        assert_eq!(score_match(&ps(0, 2), &m(0, 3, true)), 3);
         // draw — predicted 1-1, actual 2-2
         assert_eq!(score_match(&ps(1, 1), &m(2, 2, true)), 3);
-    }
-
-    #[test]
-    fn correct_outcome_wrong_diff_yields_2() {
-        // home wins, but pred 3-1 (diff 2) vs actual 2-0 (diff 2)... wait that's same diff
-        // home wins, pred 3-0 (diff 3) vs actual 2-0 (diff 2)
-        assert_eq!(score_match(&ps(3, 0), &m(2, 0, true)), 2);
-        // away wins by different margin: pred 0-2, actual 0-3
-        assert_eq!(score_match(&ps(0, 2), &m(0, 3, true)), 2);
+        // home win bigger margin — pred 3-0, actual 2-0
+        assert_eq!(score_match(&ps(3, 0), &m(2, 0, true)), 3);
+        // home win smaller margin — pred 1-0, actual 5-0
+        assert_eq!(score_match(&ps(1, 0), &m(5, 0, true)), 3);
     }
 
     #[test]

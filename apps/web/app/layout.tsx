@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Bebas_Neue, Outfit } from 'next/font/google';
 import { Providers } from './providers';
 import { AppBackground } from '@/components/AppBackground';
+import { BottomNav } from '@/components/BottomNav';
 import './globals.css';
 
 const bebas = Bebas_Neue({
@@ -35,7 +36,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${bebas.variable} ${outfit.variable} dark`}>
       <body className="antialiased">
         <AppBackground />
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <BottomNav />
+        </Providers>
       </body>
     </html>
   );

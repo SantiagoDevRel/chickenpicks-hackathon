@@ -172,9 +172,10 @@ describe('chickenpicks-onchain — happy path', () => {
   it('5. submit_prediction — three users with different scores', async () => {
     // Match 0 actual will be 2-1 (home win)
     // Match 1 actual will be 1-1 (draw)
-    // user1 predictions: [2-1 exact, 1-1 exact] = 5 + 5 = 10 pts (top)
-    // user2 predictions: [3-2 outcome+diff, 2-2 outcome+diff] = 3 + 3 = 6 pts (second)
-    // user3 predictions: [4-1 outcome only, 0-3 wrong] = 2 + 0 = 2 pts (third)
+    // Scoring rule (5/3/0): exact = 5, correct W/D/L outcome = 3, wrong = 0.
+    // user1 predictions: [2-1 exact, 1-1 exact]                = 5 + 5 = 10 pts (top)
+    // user2 predictions: [3-2 home-win, 2-2 draw]              = 3 + 3 = 6  pts (second)
+    // user3 predictions: [4-1 home-win, 0-3 away-win-wrong]    = 3 + 0 = 3  pts (third)
     const userPreds = [
       { user: user1, scores: pad([{ home: 2, away: 1 }, { home: 1, away: 1 }]) },
       { user: user2, scores: pad([{ home: 3, away: 2 }, { home: 2, away: 2 }]) },
@@ -257,7 +258,7 @@ describe('chickenpicks-onchain — happy path', () => {
     const pred3 = await program.account.prediction.fetch(p3);
     expect(pred1.points).eq(10);
     expect(pred2.points).eq(6);
-    expect(pred3.points).eq(2);
+    expect(pred3.points).eq(3);
     expect(pred1.finalRank).eq(0);
     expect(pred2.finalRank).eq(1);
     expect(pred3.finalRank).eq(2);

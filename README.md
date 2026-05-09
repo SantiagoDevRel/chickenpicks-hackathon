@@ -82,7 +82,7 @@ ChickenPicks puts these together: a fan can join a polla by talking to their pho
 5. Predict scores — for every match, by voice or UI.
 6. Voice agent (web + Android via WebView) — one tap talks to ElevenLabs Conv AI. It can list pools, open a pool, check balance, preview a LI.FI bridge quote, join, and submit picks. Verbal confirmation gates every signed tx.
 7. Admin posts fake match results at `/admin` (hackathon oracle).
-8. Settle on-chain — `settle_polla` ranks all predictions in one tx (la-polla scoring: 5/3/2/0). 5% fee transferred atomically; 95% stays in the vault per the prize distribution.
+8. Settle on-chain — `settle_polla` ranks all predictions in one tx (simplified scoring: **5** exact / **3** correct outcome / **0** wrong). 5% fee transferred atomically; 95% stays in the vault per the prize distribution.
 9. Strict-signer claim — winners call `claim_prize`; only the recorded winner pubkey can withdraw their slice.
 
 </details>
@@ -127,7 +127,7 @@ The Anchor 0.31 program is the **single source of truth** — no off-chain datab
 
 Each polla owns a USDC vault as its associated token account (`associated_token::authority = polla`), so the vault PDA self-signs CPI transfers via `CpiContext::new_with_signer` with the polla's own seed bundle.
 
-**On-chain ranking, not off-chain.** `settle_polla` is permissionless. The caller passes all N `Match` accounts + all P `Prediction` accounts via `remaining_accounts`. The program deserializes each, asserts `polla` cross-references match, asserts match indices cover `0..N-1` with no gaps or duplicates, then computes points using the la-polla scoring rule (**5 pts** exact / **3 pts** correct goal-difference / **2 pts** correct winner / **0 pts** otherwise) implemented pure-Rust in [`scoring.rs`](programs/chickenpicks-onchain/programs/chickenpicks-onchain/src/scoring.rs). Predictions are sorted by `(points DESC, submitted_at_slot ASC)` and `final_rank` is written back to each account via `p.exit(ctx.program_id)?`. **No caller can fake the winners list — the winners come from the on-chain compute.**
+**On-chain ranking, not off-chain.** `settle_polla` is permissionless. The caller passes all N `Match` accounts + all P `Prediction` accounts via `remaining_accounts`. The program deserializes each, asserts `polla` cross-references match, asserts match indices cover `0..N-1` with no gaps or duplicates, then computes points using the simplified scoring rule (**5 pts** exact score / **3 pts** correct W/D/L outcome / **0 pts** otherwise) implemented pure-Rust in [`scoring.rs`](programs/chickenpicks-onchain/programs/chickenpicks-onchain/src/scoring.rs). Predictions are sorted by `(points DESC, submitted_at_slot ASC)` and `final_rank` is written back to each account via `p.exit(ctx.program_id)?`. **No caller can fake the winners list — the winners come from the on-chain compute.**
 
 **Atomic 5% fee.** The same `settle_polla` tx that ranks predictions also CPIs `token::transfer` from vault → treasury ATA for `total_pool * 500 / 10_000`, signed by the Polla PDA. One transaction. No settlement bot.
 
@@ -208,7 +208,7 @@ chickenpicks-hackathon/
 │       ├── src/
 │       │   ├── lib.rs                     # declare_id + entry
 │       │   ├── state.rs                   # PDA shapes
-│       │   ├── scoring.rs                 # 5/3/2/0 + 8 unit tests
+│       │   ├── scoring.rs                 # 5/3/0 + unit tests
 │       │   ├── errors.rs · constants.rs
 │       │   └── instructions/              # 8 ix files
 │       └── tests/                         # ts-mocha integration tests

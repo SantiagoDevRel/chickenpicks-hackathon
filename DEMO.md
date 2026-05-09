@@ -73,7 +73,7 @@
 
 **Action**: click **POST 2-1**, **POST 1-1**, **POST 0-2** for the three matches. Then click **SETTLE POOL**.
 
-**On-chain**: `settle_polla` tx fires. **Inside the same tx**: 5% fee lands in the treasury ATA, ranks computed on-chain via la-polla scoring (5/3/2/0), `final_rank` written to each `Prediction` account. Explorer link visible — judges can see the fee transfer + rank writes in one transaction.
+**On-chain**: `settle_polla` tx fires. **Inside the same tx**: 5% fee lands in the treasury ATA, ranks computed on-chain via the 5/3/0 scoring rule (exact = 5, correct outcome = 3, wrong = 0), `final_rank` written to each `Prediction` account. Explorer link visible — judges can see the fee transfer + rank writes in one transaction.
 
 ---
 

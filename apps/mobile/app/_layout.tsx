@@ -56,9 +56,8 @@ export default function RootLayout() {
             }}
           >
             <Stack.Screen name="index" options={{ title: 'CHICKENPICKS', headerShown: false }} />
-            <Stack.Screen name="pools/index" options={{ title: 'POOLS' }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="pools/[id]" options={{ title: 'POOL' }} />
-            <Stack.Screen name="profile" options={{ title: 'PROFILE' }} />
           </Stack>
           <PrivyElements />
           <StatusBar style="light" />

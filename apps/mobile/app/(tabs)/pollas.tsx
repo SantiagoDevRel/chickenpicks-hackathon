@@ -1,5 +1,8 @@
 // Browse all pools — fetches from /api/pools (server-side Anchor decode).
 //
+// Moved from app/pools/index.tsx into the tab group. Deep-links to a
+// specific pool (`/pools/:id`) still resolve outside the group.
+//
 // We used to call program.account.polla.all() directly here, but Hermes
 // (RN's JS engine) chokes inside Anchor's borsh decoder with
 // "undefined is not a function at decode" — even after polyfilling
@@ -17,7 +20,7 @@ const POOLS_API = 'https://onchain.chickenpicks.app/api/pools';
 
 const waiting = require('../../assets/pollitos/Pollito_esperando.webp');
 
-export default function PoolsScreen() {
+export default function PollasScreen() {
   const [pools, setPools] = useState<PoolCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +45,7 @@ export default function PoolsScreen() {
           const err = e as Error;
           setError(err.message);
           // eslint-disable-next-line no-console
-          console.warn('[pools.load] error:', err);
+          console.warn('[pollas.load] error:', err);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -54,15 +57,21 @@ export default function PoolsScreen() {
     };
   }, [tick]);
 
+  // Group pools la-polla style: activas (OPEN/LOCKED) vs finalizadas (SETTLED).
+  const activas = pools.filter((p) => p.status !== 'SETTLED');
+  const finalizadas = pools.filter((p) => p.status === 'SETTLED');
+
   return (
-    <SafeAreaView className="flex-1 bg-bg-base" edges={['bottom']}>
+    <SafeAreaView className="flex-1 bg-bg-base" edges={['top']}>
       <View className="flex-row items-center justify-between px-4 py-3 border-b border-border-subtle">
-        <Text className="font-display text-2xl uppercase text-text-primary">Public Pools</Text>
+        <Text className="font-display text-2xl uppercase text-text-primary">
+          Mis Pollas
+        </Text>
         <ConnectButton />
       </View>
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         refreshControl={
           <RefreshControl
             tintColor="#FFD700"
@@ -94,20 +103,57 @@ export default function PoolsScreen() {
               contentFit="contain"
             />
             <Text className="font-display text-xl uppercase text-text-primary mb-2">
-              No pools yet
+              No pollas yet
             </Text>
             <Text className="text-sm text-text-muted text-center">
               Run <Text className="text-gold">pnpm seed:demo</Text> in the monorepo to
-              create the demo pool, or visit the web app to make your own.
+              create the demo polla, or visit the web app to make your own.
             </Text>
           </View>
         )}
 
-        {!loading &&
-          !error &&
-          pools.length > 0 &&
-          pools.map((p) => <PoolCard key={p.pubkey} pool={p} />)}
+        {!loading && !error && activas.length > 0 && (
+          <>
+            <SectionHeader label="MIS POLLAS ACTIVAS" count={activas.length} />
+            {activas.map((p) => (
+              <PoolCard key={p.pubkey} pool={p} />
+            ))}
+          </>
+        )}
+
+        {!loading && !error && finalizadas.length > 0 && (
+          <>
+            <View className="h-2" />
+            <SectionHeader label="FINALIZADAS" count={finalizadas.length} muted />
+            {finalizadas.map((p) => (
+              <PoolCard key={p.pubkey} pool={p} />
+            ))}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function SectionHeader({
+  label,
+  count,
+  muted,
+}: {
+  label: string;
+  count: number;
+  muted?: boolean;
+}) {
+  return (
+    <View className="flex-row items-center gap-2 mb-3 mt-1">
+      <Text
+        className={`font-display text-xs tracking-widest ${muted ? 'text-text-muted' : 'text-gold'}`}
+      >
+        {label}
+      </Text>
+      <Text className="font-display text-xs tracking-widest text-text-muted">
+        · {count}
+      </Text>
+    </View>
   );
 }

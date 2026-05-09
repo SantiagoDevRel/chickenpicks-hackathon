@@ -17,7 +17,7 @@ export function BrandHeader() {
       style={{ background: 'rgba(8, 12, 16, 0.85)' }}
     >
       <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/inicio" className="flex items-center gap-3 group">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={pollitoImage(pollito, 'lider')}
@@ -40,12 +40,9 @@ export function BrandHeader() {
           </span>
         </Link>
         <nav className="flex items-center gap-3">
-          <Link
-            href="/pollas"
-            className="hidden md:inline-block font-display tracking-[0.08em] text-[14px] text-text-secondary hover:text-text-primary transition"
-          >
-            POOLS
-          </Link>
+          {/* Primary nav lives in <BottomNav /> (mobile bottom bar / desktop top
+              rail). This header keeps just the wallet pill + an admin link
+              when applicable. */}
           <Link
             href="/admin"
             className="hidden md:inline-block font-display tracking-[0.08em] text-[14px] text-text-secondary hover:text-text-primary transition"
