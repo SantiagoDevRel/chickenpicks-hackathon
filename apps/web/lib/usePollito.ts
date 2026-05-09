@@ -44,3 +44,4 @@ export function usePollito(): {
 }
 
 export { POLLITOS, getPollito, randomPollitoId, pollitoImage };
+export type { Pollito } from './pollitos';

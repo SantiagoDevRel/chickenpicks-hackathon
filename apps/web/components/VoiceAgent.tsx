@@ -55,6 +55,7 @@ export function VoiceAgent({
   pollaPubkey,
   onVoiceSubmitPicks,
   onVoiceJoinPool,
+  onVoiceOpenBridge,
 }: {
   pollaPubkey?: string;
   onVoiceSubmitPicks?: (
@@ -106,15 +107,12 @@ export function VoiceAgent({
       }));
   };
 
-  const conversation = useConversation({
-    onConnect: () => setError(null),
-    onError: (e: unknown) =>
-      setError(
-        typeof e === 'string'
-          ? e
-          : (e as { message?: string })?.message ?? 'Connection error',
-      ),
-    clientTools: {
+  // ElevenLabs SDK clientTools type is strict (string|number|void only)
+  // but at runtime it JSON-serializes whatever we return. Build the tools
+  // object as an any-typed const so TS doesn't structurally check every
+  // tool's return value against the strict signature.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const clientTools: any = {
       // ─── get_current_pool: tells the agent which pool the user is on ───
       get_current_pool: async () => {
         if (!pollaPubkey) {
@@ -338,7 +336,20 @@ export function VoiceAgent({
         }
         return { sol: sol.toFixed(4), usdc: usdc.toFixed(2) };
       },
-    },
+  };
+
+  // Cast useConversation itself as any — its strict tools signature wants
+  // string|number|void returns but the runtime serializes objects fine.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const conversation = (useConversation as any)({
+    onConnect: () => setError(null),
+    onError: (e: unknown) =>
+      setError(
+        typeof e === 'string'
+          ? e
+          : (e as { message?: string })?.message ?? 'Connection error',
+      ),
+    clientTools,
   });
 
   async function start() {
