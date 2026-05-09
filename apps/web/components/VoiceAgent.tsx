@@ -119,14 +119,27 @@ export function VoiceAgent({
       // pre-rename name. Both call the same function so either works.
       list_pollas: listPoolsImpl,
 
-      // ─── get_polla_details: matches list for a given polla ──────────────
-      get_pool_details: async ({ polla_id }: { polla_id: string }) => {
+      // ─── get_pool_details: matches list for a given pool ───────────────
+      // Resilient param parsing: accepts pool_id (new), polla_id (legacy),
+      // or falls back to the page's pollaPubkey if the agent forgot to
+      // pass anything. Stops the "tool failed -> agent hallucinates teams"
+      // failure mode dead.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      get_pool_details: async (params: any) => {
+        const idArg: string | undefined =
+          params?.pool_id ?? params?.polla_id ?? params?.id ?? pollaPubkey;
+        if (!idArg) {
+          return {
+            error:
+              'No pool selected. Call get_current_pool first or ask the user which pool.',
+          };
+        }
         const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
         const provider = new AnchorProvider(conn, READ_ONLY_WALLET, {
           commitment: 'confirmed',
         });
         const program = new Program(idl as Idl, provider);
-        const pollaPk = new PublicKey(pool_id);
+        const pollaPk = new PublicKey(idArg);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const polla = await (program.account as any).polla.fetch(pollaPk);
         const matchPdas: PublicKey[] = [];
