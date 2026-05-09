@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Pressable,
   Text,
@@ -9,7 +9,10 @@ import {
   Modal,
 } from 'react-native';
 import { useLoginWithEmail } from '@privy-io/expo';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import { useWallet } from '@/lib/useWallet';
+import { SOLANA_RPC_URL, USDC_MINT } from '@/lib/constants';
 
 // Renders the active wallet pubkey (truncated) when connected, or two
 // CTAs when not: "SIGN IN" (Privy email OTP — opens an in-app modal with
@@ -95,26 +98,7 @@ export function ConnectButton() {
   }
 
   if (wallet && pubkey) {
-    const short = `${pubkey.toBase58().slice(0, 4)}…${pubkey.toBase58().slice(-4)}`;
-    return (
-      <Pressable
-        onPress={() =>
-          Alert.alert(
-            source === 'mwa' ? 'Wallet App' : 'Embedded Wallet',
-            pubkey.toBase58(),
-            [
-              { text: 'Disconnect', style: 'destructive', onPress: disconnect },
-              { text: 'Close', style: 'cancel' },
-            ],
-          )
-        }
-        className="rounded-md border border-gold/40 bg-bg-card px-3 py-2"
-      >
-        <Text className="font-display text-xs tracking-widest text-gold">
-          {short}
-        </Text>
-      </Pressable>
-    );
+    return <ConnectedPill pubkey={pubkey} source={source} disconnect={disconnect} />;
   }
 
   return (
@@ -224,5 +208,69 @@ export function ConnectButton() {
         </View>
       </Modal>
     </>
+  );
+}
+
+function ConnectedPill({
+  pubkey,
+  source,
+  disconnect,
+}: {
+  pubkey: PublicKey;
+  source: 'privy' | 'mwa' | null;
+  disconnect: () => Promise<void>;
+}) {
+  const short = `${pubkey.toBase58().slice(0, 4)}…${pubkey.toBase58().slice(-4)}`;
+  const [sol, setSol] = useState<number | null>(null);
+  const [usdc, setUsdc] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
+
+    async function refresh() {
+      try {
+        const lamports = await conn.getBalance(pubkey);
+        if (!cancelled) setSol(lamports / 1_000_000_000);
+      } catch {
+        // ignore — keep last good value
+      }
+      try {
+        const ata = getAssociatedTokenAddressSync(new PublicKey(USDC_MINT), pubkey);
+        const acc = await conn.getTokenAccountBalance(ata);
+        if (!cancelled) setUsdc(Number(acc.value.uiAmountString ?? '0'));
+      } catch {
+        if (!cancelled) setUsdc(0);
+      }
+    }
+    void refresh();
+    const id = setInterval(refresh, 10_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [pubkey]);
+
+  return (
+    <Pressable
+      onPress={() =>
+        Alert.alert(
+          source === 'mwa' ? 'Wallet App' : 'Embedded Wallet',
+          `${pubkey.toBase58()}\n\nSOL: ${sol?.toFixed(4) ?? '…'}\nUSDC: ${usdc?.toFixed(2) ?? '…'}`,
+          [
+            { text: 'Disconnect', style: 'destructive', onPress: disconnect },
+            { text: 'Close', style: 'cancel' },
+          ],
+        )
+      }
+      className="rounded-md border border-gold/40 bg-bg-card px-3 py-2"
+    >
+      <View className="flex-row items-center gap-2">
+        <Text className="font-display text-xs tracking-widest text-gold">{short}</Text>
+        <Text className="font-display text-[10px] tracking-widest text-text-secondary">
+          ◆ {sol === null ? '…' : sol.toFixed(2)} SOL · ${usdc === null ? '…' : usdc.toFixed(0)} USDC
+        </Text>
+      </View>
+    </Pressable>
   );
 }
