@@ -83,7 +83,6 @@ pub fn handler(ctx: Context<ClaimPrize>) -> Result<()> {
         .ok_or(ChickenPicksError::NumericalOverflow)?;
 
     // Transfer from vault → predictor. Polla PDA signs.
-    let polla_key = polla.key();
     let creator = polla.creator;
     let name = polla.name;
     let bump = polla.bump;
@@ -107,9 +106,6 @@ pub fn handler(ctx: Context<ClaimPrize>) -> Result<()> {
     token::transfer(cpi_ctx, payout)?;
 
     prediction.claimed = true;
-
-    // Quiet the unused-binding lint in case Rust gets noisy
-    let _ = polla_key;
 
     Ok(())
 }

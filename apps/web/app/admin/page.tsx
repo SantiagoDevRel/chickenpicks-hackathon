@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { AnchorProvider, BN, Program, type Idl } from '@coral-xyz/anchor';
+import { AnchorProvider, Program, type Idl } from '@coral-xyz/anchor';
 import idl from '@chickenpicks/anchor-client/idl' with { type: 'json' };
 import { PROGRAM_ID, SOLANA_RPC_URL, USDC_MINT } from '@chickenpicks/shared';
 import { BrandHeader } from '@/components/BrandHeader';

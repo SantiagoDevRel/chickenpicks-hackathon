@@ -6,7 +6,6 @@ import { AnchorProvider, BN, Program } from '@coral-xyz/anchor';
 import { Connection, PublicKey } from '@solana/web3.js';
 import idl from '@chickenpicks/anchor-client/idl' with { type: 'json' };
 import {
-  PROGRAM_ID,
   SOLANA_RPC_URL,
   USDC_DECIMALS,
   USDC_MINT,
