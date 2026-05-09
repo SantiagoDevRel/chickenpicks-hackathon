@@ -24,6 +24,8 @@ config.resolver.nodeModulesPaths = [
 ];
 
 // Solana / Anchor / Privy (jose) pull in node-only modules; alias safe stubs.
+// We also force 'jose' itself to its bundled-browser entry below (see resolveRequest)
+// to avoid having to polyfill the entire Node stdlib (http, https, fs, path, os, ...).
 config.resolver.extraNodeModules = {
   ...config.resolver.extraNodeModules,
   buffer: require.resolve('buffer'),
@@ -33,8 +35,31 @@ config.resolver.extraNodeModules = {
 };
 
 config.resolver.unstable_enablePackageExports = true;
-// Prefer browser/react-native package exports over Node's so jose, ws, etc.
-// pick their browser-compatible runtimes instead of importing fs/util/etc.
-config.resolver.unstable_conditionNames = ['require', 'react-native', 'browser'];
+// CRITICAL: do NOT add 'browser' as a global condition.
+// @solana-mobile/mobile-wallet-adapter-protocol declares 'browser' BEFORE
+// 'react-native' in its package.json exports — and Metro picks the first
+// matching condition. With 'browser' active, MWA loads its web-only runtime
+// which throws "secure context (https)" inside a native APK.
+config.resolver.unstable_conditionNames = ['require', 'react-native'];
+
+// Per-package browser-condition exception for jose (Privy's JWT lib).
+// jose's node runtime imports http/https/zlib/util/fs which would each need
+// polyfilling. Its browser bundle is self-contained. We can't add 'browser'
+// globally (breaks MWA — see above), so we intercept just jose imports here.
+const upstreamResolveRequest =
+  config.resolver.resolveRequest ?? null;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === 'jose' || moduleName.startsWith('jose/')) {
+    const ctx = {
+      ...context,
+      unstable_conditionNames: ['require', 'browser'],
+    };
+    return ctx.resolveRequest(ctx, moduleName, platform);
+  }
+  if (upstreamResolveRequest) {
+    return upstreamResolveRequest(context, moduleName, platform);
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
 
 module.exports = withNativeWind(config, { input: './global.css' });
