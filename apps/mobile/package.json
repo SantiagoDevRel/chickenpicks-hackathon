@@ -24,6 +24,7 @@
     "@solana/spl-token": "^0.4.9",
     "@solana/web3.js": "^1.95.4",
     "buffer": "^6.0.3",
+    "util": "^0.12.5",
     "expo": "~53.0.0",
     "expo-application": "~6.0.1",
     "expo-build-properties": "~0.13.1",

@@ -22,14 +22,18 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
-// Solana / Anchor pull in node-only modules; alias safe stubs.
+// Solana / Anchor / Privy (jose) pull in node-only modules; alias safe stubs.
 config.resolver.extraNodeModules = {
   ...config.resolver.extraNodeModules,
   buffer: require.resolve('buffer'),
   crypto: require.resolve('expo-crypto'),
   stream: path.resolve(projectRoot, 'lib/empty.js'),
+  util: require.resolve('util'),
 };
 
 config.resolver.unstable_enablePackageExports = true;
+// Prefer browser/react-native package exports over Node's so jose, ws, etc.
+// pick their browser-compatible runtimes instead of importing fs/util/etc.
+config.resolver.unstable_conditionNames = ['require', 'react-native', 'browser'];
 
 module.exports = withNativeWind(config, { input: './global.css' });
