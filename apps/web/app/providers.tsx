@@ -31,9 +31,12 @@ export function Providers({ children }: { children: ReactNode }) {
       appId={appId}
       config={{
         // Email is the primary login (works globally including Latam where
-        // SMS is region-blocked). SMS stays as a fallback for demo regions
-        // where it does work. Both create the same embedded Solana wallet.
-        loginMethods: ['email', 'sms'],
+        // SMS is region-blocked). SMS stays as a fallback for demo regions.
+        // 'wallet' lets users sign in directly with Phantom / Solflare /
+        // Metamask without an email step — useful if they already have a
+        // Solana wallet they trust, or for the LI.FI bridge demo where they
+        // need a Metamask-style EVM wallet.
+        loginMethods: ['email', 'sms', 'wallet'],
         appearance: {
           theme: 'dark',
           accentColor: '#FFD700',
