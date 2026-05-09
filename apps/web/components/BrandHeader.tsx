@@ -2,12 +2,15 @@
 
 import Link from 'next/link';
 import { ConnectButton } from './ConnectButton';
+import { pollitoImage, usePollito } from '@/lib/usePollito';
 
-// Sticky brand header — wordmark in tricolor (gold/amber/turf), pibe líder
-// chicken on the left. Mirrors la-polla's BrandHeader so the visual identity
-// reads identical across both products.
+// Sticky brand header — wordmark in tricolor (gold/amber/turf), the user's
+// chosen pollito on the left (defaults to pibe-líder before they pick).
+// Mirrors la-polla's BrandHeader so the visual identity reads identical
+// across both products.
 
 export function BrandHeader() {
+  const { pollito } = usePollito();
   return (
     <header
       className="sticky top-0 z-40 px-4 pt-4 pb-3 backdrop-blur-md"
@@ -17,8 +20,8 @@ export function BrandHeader() {
         <Link href="/" className="flex items-center gap-3 group">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/pollitos/pollito_pibe_lider.webp"
-            alt=""
+            src={pollitoImage(pollito, 'lider')}
+            alt={pollito.label}
             width={44}
             height={44}
             style={{ objectFit: 'contain' }}

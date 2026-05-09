@@ -30,6 +30,7 @@ import {
   type ConfirmState,
   type ProposedPick,
 } from '@/components/PicksConfirmModal';
+import { pollitoImage, usePollito } from '@/lib/usePollito';
 
 const programId = new PublicKey(PROGRAM_ID);
 const usdcMintKey = new PublicKey(USDC_MINT);
@@ -114,6 +115,7 @@ export default function PollaDetailPage() {
   const { authenticated, ready } = usePrivy();
   const { wallets } = useSolanaWallets();
   const wallet = wallets[0];
+  const { pollito } = usePollito();
   const userPubkey = useMemo(() => {
     if (!wallet?.address) return null;
     try {
@@ -607,13 +609,13 @@ export default function PollaDetailPage() {
 
         {!loading && polla && (
           <>
-            {/* Polla hero */}
+            {/* Polla hero — uses the user's chosen pollito */}
             <div className="lp-card-hero p-6 mt-4">
               <div className="flex items-start gap-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/pollitos/pollito_capitan_lider.webp"
-                  alt=""
+                  src={pollitoImage(pollito, 'lider')}
+                  alt={pollito.label}
                   width={80}
                   height={80}
                   className="flex-shrink-0 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"

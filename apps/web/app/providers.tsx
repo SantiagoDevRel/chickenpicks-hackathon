@@ -4,6 +4,7 @@ import { PrivyProvider } from '@privy-io/react-auth';
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
+import { PollitoPickerModal } from '@/components/PollitoPickerModal';
 
 const SOLANA_RPC =
   process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.devnet.solana.com';
@@ -52,7 +53,10 @@ export function Providers({ children }: { children: ReactNode }) {
         ],
       }}
     >
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        <PollitoPickerModal />
+      </QueryClientProvider>
     </PrivyProvider>
   );
 }
