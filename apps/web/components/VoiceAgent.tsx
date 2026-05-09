@@ -54,11 +54,17 @@ const READ_ONLY_WALLET = {
 export function VoiceAgent({
   pollaPubkey,
   onVoiceSubmitPicks,
+  onVoiceJoinPool,
 }: {
   pollaPubkey?: string;
   onVoiceSubmitPicks?: (
     scores: { home: number; away: number }[],
   ) => Promise<{ ok: boolean; sig?: string; error?: string }>;
+  onVoiceJoinPool?: () => Promise<{
+    ok: boolean;
+    sig?: string;
+    error?: string;
+  }>;
 }) {
   const { wallets } = useSolanaWallets();
   const wallet = wallets[0];
@@ -165,6 +171,24 @@ export function VoiceAgent({
             settled: m.settled,
           })),
         };
+      },
+
+      // ─── join_pool: voice → join confirm modal → on-chain join ─────────
+      // Same pattern as submit_picks: parent owns the modal + signing,
+      // we dispatch and await its result. No params — joins the pool the
+      // user is currently viewing.
+      join_pool: async () => {
+        if (!onVoiceJoinPool) {
+          return {
+            status: 'error',
+            error: 'Join not available — open a specific pool page first.',
+          };
+        }
+        const result = await onVoiceJoinPool();
+        if (result.ok) {
+          return { status: 'joined', tx_signature: result.sig };
+        }
+        return { status: 'cancelled', error: result.error };
       },
 
       // ─── submit_picks: voice → confirm modal → on-chain submit ─────────

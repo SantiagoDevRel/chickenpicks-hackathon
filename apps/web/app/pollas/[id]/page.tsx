@@ -30,6 +30,10 @@ import {
   type ConfirmState,
   type ProposedPick,
 } from '@/components/PicksConfirmModal';
+import {
+  JoinConfirmModal,
+  type JoinConfirmState,
+} from '@/components/JoinConfirmModal';
 import { pollitoImage, usePollito } from '@/lib/usePollito';
 
 const programId = new PublicKey(PROGRAM_ID);
@@ -408,6 +412,121 @@ export default function PollaDetailPage() {
     }
   }
 
+  // ─── Voice → join confirm modal → join_polla flow ──────────────────────
+  const [joinConfirmState, setJoinConfirmState] = useState<JoinConfirmState>({
+    kind: 'idle',
+  });
+  const joinResolverRef = useRef<
+    ((result: { ok: boolean; sig?: string; error?: string }) => void) | null
+  >(null);
+
+  const handleVoiceJoin = useCallback(async (): Promise<{
+    ok: boolean;
+    sig?: string;
+    error?: string;
+  }> => {
+    if (!polla) {
+      return { ok: false, error: 'Pool not loaded yet.' };
+    }
+    if (prediction) {
+      return {
+        ok: false,
+        error: 'You already joined this pool — go ahead and submit your picks.',
+      };
+    }
+    if (statusKey(polla.status) !== 'OPEN') {
+      return { ok: false, error: 'This pool is not accepting joins anymore.' };
+    }
+    if (!authenticated || !userPubkey) {
+      return { ok: false, error: 'Please sign in first.' };
+    }
+    setJoinConfirmState({
+      kind: 'open',
+      poolName: decodeFixedString(polla.name),
+      tournament: decodeFixedString(polla.tournament),
+      entryUsdc: formatUsdc(polla.entryAmount),
+    });
+    return new Promise((resolve) => {
+      joinResolverRef.current = resolve;
+    });
+  }, [polla, prediction, authenticated, userPubkey]);
+
+  async function confirmVoiceJoin() {
+    if (!polla || !pollaPubkey || !wallet || !userPubkey) return;
+    if (joinConfirmState.kind !== 'open' && joinConfirmState.kind !== 'error') return;
+    const snapshot = joinConfirmState;
+    setJoinConfirmState({ kind: 'busy' });
+    try {
+      const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adaptedWallet: any = {
+        publicKey: userPubkey,
+        signTransaction: async (tx: unknown) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return await (wallet as any).signTransaction(tx);
+        },
+        signAllTransactions: async (txs: unknown[]) => {
+          return Promise.all(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            txs.map((tx) => (wallet as any).signTransaction(tx)),
+          );
+        },
+      };
+      const provider = new AnchorProvider(conn, adaptedWallet, {
+        commitment: 'confirmed',
+      });
+      const program = new Program(idl as Idl, provider);
+      const [predPda] = PublicKey.findProgramAddressSync(
+        [
+          new TextEncoder().encode('prediction'),
+          pollaPubkey.toBuffer(),
+          userPubkey.toBuffer(),
+        ],
+        programId,
+      );
+      const userUsdcAta = getAssociatedTokenAddressSync(usdcMintKey, userPubkey);
+
+      const sig = await program.methods
+        .joinPolla()
+        .accounts({
+          polla: pollaPubkey,
+          pollaVault: polla.vault,
+          participantUsdcAta: userUsdcAta,
+          prediction: predPda,
+          participant: userPubkey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      setLastSig(sig);
+      setJoinConfirmState({ kind: 'idle' });
+      refreshAll();
+      joinResolverRef.current?.({ ok: true, sig });
+      joinResolverRef.current = null;
+    } catch (e) {
+      setJoinConfirmState({
+        kind: 'error',
+        poolName:
+          'poolName' in snapshot ? snapshot.poolName : '',
+        tournament:
+          'tournament' in snapshot ? snapshot.tournament : '',
+        entryUsdc:
+          'entryUsdc' in snapshot ? snapshot.entryUsdc : '',
+        message: (e as Error).message,
+      });
+      // Don't resolve yet — let user retry or cancel
+    }
+  }
+
+  function cancelVoiceJoin() {
+    if (joinResolverRef.current) {
+      joinResolverRef.current({ ok: false, error: 'User cancelled.' });
+      joinResolverRef.current = null;
+    }
+    setJoinConfirmState({ kind: 'idle' });
+  }
+
   // ─── Voice → confirm modal → submit_prediction flow ────────────────────
   const [confirmState, setConfirmState] = useState<ConfirmState>({ kind: 'idle' });
   // The submit_prediction voice tool returns a Promise that resolves once the
@@ -575,6 +694,7 @@ export default function PollaDetailPage() {
         <VoiceAgent
           pollaPubkey={pollaPubkey?.toBase58()}
           onVoiceSubmitPicks={handleVoiceSubmit}
+          onVoiceJoinPool={handleVoiceJoin}
         />
       </div>
 
@@ -583,6 +703,13 @@ export default function PollaDetailPage() {
         state={confirmState}
         onConfirm={confirmVoicePicks}
         onCancel={cancelVoicePicks}
+      />
+
+      {/* Confirmation modal triggered by the voice agent's join_pool tool */}
+      <JoinConfirmModal
+        state={joinConfirmState}
+        onConfirm={confirmVoiceJoin}
+        onCancel={cancelVoiceJoin}
       />
 
       <div className="mx-auto max-w-3xl px-4 py-8">
