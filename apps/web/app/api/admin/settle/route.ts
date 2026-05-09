@@ -55,7 +55,8 @@ export async function POST(req: NextRequest) {
       pollaAcc.creator,
     );
 
-    const sig = await program.methods
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sig = await (program.methods as any)
       .settlePolla()
       .accounts({
         platform: platformPda,

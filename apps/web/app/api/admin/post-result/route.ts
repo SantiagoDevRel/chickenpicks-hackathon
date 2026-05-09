@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
       program.programId,
     );
 
-    const sig = await program.methods
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sig = await (program.methods as any)
       .setMatchResult(matchIndex, homeScore, awayScore)
       .accounts({
         platform: platformPda,
