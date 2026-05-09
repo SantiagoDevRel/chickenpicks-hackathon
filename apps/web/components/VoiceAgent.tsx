@@ -55,7 +55,6 @@ export function VoiceAgent({
   pollaPubkey,
   onVoiceSubmitPicks,
   onVoiceJoinPool,
-  onVoiceOpenBridge,
 }: {
   pollaPubkey?: string;
   onVoiceSubmitPicks?: (
@@ -69,11 +68,6 @@ export function VoiceAgent({
     sig?: string;
     error?: string;
   }>;
-  onVoiceOpenBridge?: (params: {
-    fromChain?: number;
-    fromToken?: string;
-    amount?: string;
-  }) => Promise<{ opened: boolean; message?: string }>;
 }) {
   const { wallets } = useSolanaWallets();
   const wallet = wallets[0];
@@ -179,21 +173,15 @@ export function VoiceAgent({
         };
       },
 
-      // ─── open_bridge: voice → LI.FI Widget popup ───────────────────────
-      // Triggered when the user says they want to fund their wallet from
-      // another chain ("I want to bridge from Polygon", "I have USDC on
-      // Arbitrum", etc). The agent collects intent (source chain, amount)
-      // and calls this tool with friendly chain names. We map to LI.FI
-      // chain IDs and pre-fill the widget so the user only has to confirm
-      // and sign on the source chain.
+      // ─── preview_bridge_quote: voice → real LI.FI route preview ────────
+      // Calls our /api/lifi/quote endpoint, which uses @lifi/sdk to fetch
+      // a real cross-chain route from the user's source chain to Solana
+      // USDC. Returns a digestible summary (duration, fee, provider) so
+      // the agent can speak realistic numbers like "from Polygon it'd
+      // take 30 seconds and cost 5 cents". Keeps the LI.FI integration
+      // story alive without needing to actually execute the bridge.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      open_bridge: async (params: any) => {
-        if (!onVoiceOpenBridge) {
-          return {
-            status: 'error',
-            error: 'Bridge not available on this page.',
-          };
-        }
+      preview_bridge_quote: async (params: any) => {
         const chainNameToId: Record<string, number> = {
           ethereum: 1,
           eth: 1,
@@ -207,26 +195,32 @@ export function VoiceAgent({
           base: 8453,
           bsc: 56,
           bnb: 56,
-          avalanche: 43114,
-          avax: 43114,
         };
-        const rawChain = (params?.from_chain ?? params?.fromChain ?? '')
+        const rawChain = (params?.from_chain ?? '')
           .toString()
           .toLowerCase()
           .trim();
-        const fromChain = chainNameToId[rawChain] ?? undefined;
-        const result = await onVoiceOpenBridge({
-          fromChain,
-          fromToken: params?.from_token ?? params?.fromToken,
-          amount: params?.amount?.toString(),
-        });
-        return result.opened
-          ? {
-              status: 'opened',
-              message:
-                'LI.FI bridge widget is open. The user signs on the source chain in that popup; once USDC lands on Solana, suggest they say "join the pool".',
-            }
-          : { status: 'error', error: result.message ?? 'Failed to open bridge.' };
+        const fromChain = chainNameToId[rawChain];
+        if (!fromChain) {
+          return {
+            supported: false,
+            message: `Chain "${rawChain}" is not in our supported list yet.`,
+          };
+        }
+        try {
+          const res = await fetch('/api/lifi/quote', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              from_chain: fromChain,
+              amount: params?.amount?.toString(),
+            }),
+          });
+          const data = await res.json();
+          return data;
+        } catch (e) {
+          return { supported: false, error: (e as Error).message };
+        }
       },
 
       // ─── join_pool: voice → on-chain join (modal as fallback) ──────────
