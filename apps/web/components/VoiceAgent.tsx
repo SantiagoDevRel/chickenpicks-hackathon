@@ -134,24 +134,59 @@ export function VoiceAgent({
       },
 
       // ─── open_pool: navigate to a pool's detail page ──────────────────
-      // Triggered when the user picks a pool from list_pools or names it
-      // ("open WC2026 Voice Demo"). The agent passes the pool's pubkey
-      // (from list_pools output) and the page routes via Next.js router.
+      // Triggered when the user names or picks a pool. Agent passes the
+      // pool's pubkey OR the pool's name — we accept both. If it's a
+      // name, we run list_pools internally and fuzzy-match.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       open_pool: async (params: any) => {
-        const id = (params?.pool_id ?? params?.id ?? '').toString();
-        if (!id) {
-          return { error: 'No pool_id provided. Call list_pools first.' };
+        const arg = (params?.pool_id ?? params?.id ?? params?.name ?? '')
+          .toString()
+          .trim();
+        if (!arg) {
+          return { error: 'No pool_id or pool name provided.' };
         }
         if (!onOpenPool) {
           return { error: 'Navigation not available on this page.' };
         }
-        const result = await onOpenPool(id);
+
+        // Try as pubkey first (32-44 base58 chars heuristic)
+        const looksLikePubkey = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(arg);
+        let resolvedId = arg;
+
+        if (!looksLikePubkey) {
+          // Treat as a pool NAME — fetch all pools, fuzzy match on name
+          try {
+            const allPools = await listPoolsImpl();
+            const normalized = arg.toLowerCase().replace(/[^a-z0-9 ]/g, '');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const match = allPools.find((p: any) => {
+              const poolName = (p.name as string).toLowerCase().replace(/[^a-z0-9 ]/g, '');
+              return (
+                poolName === normalized ||
+                poolName.includes(normalized) ||
+                normalized.includes(poolName)
+              );
+            });
+            if (!match) {
+              return {
+                error: `No pool matching "${arg}". Available: ${allPools
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  .map((p: any) => p.name)
+                  .join(', ')}`,
+              };
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            resolvedId = (match as any).id;
+          } catch (e) {
+            return { error: `Could not fetch pools: ${(e as Error).message}` };
+          }
+        }
+
+        const result = await onOpenPool(resolvedId);
         if (result.navigated) {
           return {
             status: 'navigated',
-            message:
-              'Browser is now on the pool detail page. The user can see the matches and pay.',
+            message: 'Browser is now on the pool detail page.',
           };
         }
         return { status: 'error', error: result.error ?? 'Navigation failed.' };

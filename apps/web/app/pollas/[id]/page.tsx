@@ -479,11 +479,12 @@ export default function PollaDetailPage() {
   }, [polla, pollaPubkey, wallet, userPubkey, refreshAll]);
 
   const handleVoiceJoin = useCallback(
-    async (verballyConfirmed: boolean): Promise<{
-      ok: boolean;
-      sig?: string;
-      error?: string;
-    }> => {
+    async (
+      _unused: boolean,
+    ): Promise<{ ok: boolean; sig?: string; error?: string }> => {
+      // Voice path: agent already confirmed verbally ("is that alright?"
+      // → user said yes). We fire the tx directly. The modal stays for
+      // the manual JOIN POOL button on the page UI; voice always skips it.
       if (!polla) return { ok: false, error: 'Pool not loaded yet.' };
       if (prediction) {
         return {
@@ -498,36 +499,20 @@ export default function PollaDetailPage() {
       if (!authenticated || !userPubkey) {
         return { ok: false, error: 'Please sign in first.' };
       }
-
-      // Voice-only path: agent already verbally confirmed with the user,
-      // skip the visual modal and fire the tx straight from the wallet.
-      if (verballyConfirmed) {
-        setJoinConfirmState({ kind: 'busy' });
-        const result = await executeJoin();
-        if (result.ok) {
-          setJoinConfirmState({ kind: 'idle' });
-        } else {
-          setJoinConfirmState({
-            kind: 'error',
-            poolName: decodeFixedString(polla.name),
-            tournament: decodeFixedString(polla.tournament),
-            entryUsdc: formatUsdc(polla.entryAmount),
-            message: result.error ?? 'Tx failed.',
-          });
-        }
-        return result;
+      setJoinConfirmState({ kind: 'busy' });
+      const result = await executeJoin();
+      if (result.ok) {
+        setJoinConfirmState({ kind: 'idle' });
+      } else {
+        setJoinConfirmState({
+          kind: 'error',
+          poolName: decodeFixedString(polla.name),
+          tournament: decodeFixedString(polla.tournament),
+          entryUsdc: formatUsdc(polla.entryAmount),
+          message: result.error ?? 'Tx failed.',
+        });
       }
-
-      // Fallback: visual modal confirms before signing.
-      setJoinConfirmState({
-        kind: 'open',
-        poolName: decodeFixedString(polla.name),
-        tournament: decodeFixedString(polla.tournament),
-        entryUsdc: formatUsdc(polla.entryAmount),
-      });
-      return new Promise((resolve) => {
-        joinResolverRef.current = resolve;
-      });
+      return result;
     },
     [polla, prediction, authenticated, userPubkey, executeJoin],
   );
@@ -641,8 +626,11 @@ export default function PollaDetailPage() {
   const handleVoiceSubmit = useCallback(
     async (
       voiceScores: { home: number; away: number }[],
-      verballyConfirmed: boolean,
+      _unused: boolean,
     ): Promise<{ ok: boolean; sig?: string; error?: string }> => {
+      // Voice path: agent already verbally confirmed picks with the user.
+      // We fire the tx directly. The modal stays for the manual SAVE PICKS
+      // button on the page; voice always skips it.
       if (!polla || matches.length === 0) {
         return {
           ok: false,
@@ -665,28 +653,18 @@ export default function PollaDetailPage() {
           awayScore: v && Number.isFinite(v.away) ? v.away : 0,
         };
       });
-
-      // Voice-only path: agent confirmed verbally, skip the modal.
-      if (verballyConfirmed) {
-        setConfirmState({ kind: 'busy' });
-        const result = await executeSubmitPicks(proposed);
-        if (result.ok) {
-          setConfirmState({ kind: 'idle' });
-        } else {
-          setConfirmState({
-            kind: 'error',
-            picks: proposed,
-            message: result.error ?? 'Tx failed.',
-          });
-        }
-        return result;
+      setConfirmState({ kind: 'busy' });
+      const result = await executeSubmitPicks(proposed);
+      if (result.ok) {
+        setConfirmState({ kind: 'idle' });
+      } else {
+        setConfirmState({
+          kind: 'error',
+          picks: proposed,
+          message: result.error ?? 'Tx failed.',
+        });
       }
-
-      // Fallback: visual modal flow.
-      setConfirmState({ kind: 'open', picks: proposed });
-      return new Promise((resolve) => {
-        voiceResolverRef.current = resolve;
-      });
+      return result;
     },
     [polla, matches, authenticated, userPubkey, prediction, executeSubmitPicks],
   );
