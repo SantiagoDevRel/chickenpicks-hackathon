@@ -5,7 +5,7 @@
 //
 // MWA only works on Android (the protocol is Android-only as of writing —
 // iOS uses a different flow). On iOS we fall back to Privy embedded.
-import { transact, type Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-mobile';
+import { transact, type Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import {
   PublicKey,
   Transaction,
