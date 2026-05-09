@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnchorProvider, BN, Program } from '@coral-xyz/anchor';
 import { Connection, PublicKey } from '@solana/web3.js';
 import idl from '@chickenpicks/anchor-client/idl' with { type: 'json' };
@@ -13,8 +12,6 @@ import {
   USDC_MINT,
 } from '@chickenpicks/shared';
 import { BrandHeader } from '@/components/BrandHeader';
-import { VoiceAgent } from '@/components/VoiceAgent';
-import { resolvePagePath } from '@/lib/navRoutes';
 
 type RawPolla = {
   creator: PublicKey;
@@ -138,42 +135,9 @@ export default function PollasPage() {
     };
   }, []);
 
-  const router = useRouter();
-  const handleVoiceOpenPool = useCallback(
-    async (poolId: string) => {
-      try {
-        new PublicKey(poolId);
-        router.push(`/pollas/${poolId}`);
-        return { navigated: true };
-      } catch (e) {
-        return { navigated: false, error: (e as Error).message };
-      }
-    },
-    [router],
-  );
-  const handleGoToPage = useCallback(
-    async (page: string) => {
-      const path = resolvePagePath(page);
-      if (!path) return { navigated: false, error: `Unknown page: ${page}` };
-      router.push(path);
-      return { navigated: true };
-    },
-    [router],
-  );
-
   return (
     <main className="min-h-screen">
       <BrandHeader />
-
-      {/* Voice agent — floats on the list page too so users can ask
-          "what pools are open" / "open WC2026 Voice Demo" without first
-          drilling into a specific pool. */}
-      <div className="fixed bottom-6 right-6 z-40">
-        <VoiceAgent
-          onOpenPool={handleVoiceOpenPool}
-          onGoToPage={handleGoToPage}
-        />
-      </div>
 
       <div className="mx-auto max-w-5xl px-4 py-10">
         <div className="mb-6 flex items-center justify-between">

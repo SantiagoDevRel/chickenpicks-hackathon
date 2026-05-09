@@ -695,6 +695,21 @@ export default function PollaDetailPage() {
     setConfirmState({ kind: 'idle' });
   }
 
+  // ─── Register voice callbacks via context so the persistent VoiceAgent
+  //     in providers.tsx picks up this page's specific handlers. Cleared
+  //     on unmount so the agent falls back to global-only callbacks.
+  const setVoiceCallbacks = useSetVoiceCallbacks();
+  useEffect(() => {
+    setVoiceCallbacks({
+      pollaPubkey: pollaPubkey?.toBase58(),
+      onVoiceJoinPool: handleVoiceJoin,
+      onVoiceSubmitPicks: handleVoiceSubmit,
+    });
+    return () => {
+      setVoiceCallbacks({});
+    };
+  }, [pollaPubkey, handleVoiceJoin, handleVoiceSubmit, setVoiceCallbacks]);
+
   // Compute payout preview when settled + ranked. Mirrors the on-chain math
   // in claim_prize: denominator is the sum of prize tiers that actually have
   // a ranked participant (so a 1-player polla on a 3-tier distribution still

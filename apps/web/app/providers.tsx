@@ -5,6 +5,8 @@ import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { PollitoPickerModal } from '@/components/PollitoPickerModal';
+import { PersistentVoiceAgent } from '@/components/PersistentVoiceAgent';
+import { VoiceCallbacksProvider } from '@/lib/VoiceContext';
 
 const SOLANA_RPC =
   process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? 'https://api.devnet.solana.com';
@@ -57,8 +59,11 @@ export function Providers({ children }: { children: ReactNode }) {
       }}
     >
       <QueryClientProvider client={queryClient}>
-        {children}
-        <PollitoPickerModal />
+        <VoiceCallbacksProvider>
+          {children}
+          <PollitoPickerModal />
+          <PersistentVoiceAgent />
+        </VoiceCallbacksProvider>
       </QueryClientProvider>
     </PrivyProvider>
   );

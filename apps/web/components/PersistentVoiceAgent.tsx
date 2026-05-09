@@ -1,20 +1,24 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { PublicKey } from '@solana/web3.js';
 import { VoiceAgent } from './VoiceAgent';
+import { useVoiceCallbacks } from '@/lib/VoiceContext';
 import { resolvePagePath } from '@/lib/navRoutes';
 
 /**
- * Voice agent wrapper for pages that don't carry a specific pool context.
- * Mount this on the landing page (/) so users can talk to the coach from
- * the very first page load and ask to be taken anywhere in the app. The
- * pool detail page mounts the bigger VoiceAgent directly because it needs
- * pollaPubkey + the join/submit callbacks.
+ * The single VoiceAgent for the entire app. Mounted once inside the
+ * Providers tree so it survives Next.js route changes — the user's
+ * conversation persists when they navigate between landing / pools list
+ * / pool detail. Pages register their own join/submit callbacks via
+ * useSetVoiceCallbacks() — this component reads from useVoiceCallbacks
+ * and re-renders when they change.
  */
-export function NavVoiceMount() {
+export function PersistentVoiceAgent() {
   const router = useRouter();
+  const { pollaPubkey, onVoiceJoinPool, onVoiceSubmitPicks } =
+    useVoiceCallbacks();
 
   const goToPage = useCallback(
     async (page: string) => {
@@ -46,7 +50,13 @@ export function NavVoiceMount() {
 
   return (
     <div className="fixed bottom-6 right-6 z-40">
-      <VoiceAgent onGoToPage={goToPage} onOpenPool={openPool} />
+      <VoiceAgent
+        pollaPubkey={pollaPubkey}
+        onVoiceJoinPool={onVoiceJoinPool}
+        onVoiceSubmitPicks={onVoiceSubmitPicks}
+        onOpenPool={openPool}
+        onGoToPage={goToPage}
+      />
     </div>
   );
 }
