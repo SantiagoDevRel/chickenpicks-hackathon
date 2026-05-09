@@ -68,6 +68,11 @@ export function VoiceAgent({
     sig?: string;
     error?: string;
   }>;
+  onVoiceOpenBridge?: (params: {
+    fromChain?: number;
+    fromToken?: string;
+    amount?: string;
+  }) => Promise<{ opened: boolean; message?: string }>;
 }) {
   const { wallets } = useSolanaWallets();
   const wallet = wallets[0];
@@ -174,6 +179,56 @@ export function VoiceAgent({
             settled: m.settled,
           })),
         };
+      },
+
+      // ─── open_bridge: voice → LI.FI Widget popup ───────────────────────
+      // Triggered when the user says they want to fund their wallet from
+      // another chain ("I want to bridge from Polygon", "I have USDC on
+      // Arbitrum", etc). The agent collects intent (source chain, amount)
+      // and calls this tool with friendly chain names. We map to LI.FI
+      // chain IDs and pre-fill the widget so the user only has to confirm
+      // and sign on the source chain.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      open_bridge: async (params: any) => {
+        if (!onVoiceOpenBridge) {
+          return {
+            status: 'error',
+            error: 'Bridge not available on this page.',
+          };
+        }
+        const chainNameToId: Record<string, number> = {
+          ethereum: 1,
+          eth: 1,
+          mainnet: 1,
+          polygon: 137,
+          matic: 137,
+          arbitrum: 42161,
+          arb: 42161,
+          optimism: 10,
+          op: 10,
+          base: 8453,
+          bsc: 56,
+          bnb: 56,
+          avalanche: 43114,
+          avax: 43114,
+        };
+        const rawChain = (params?.from_chain ?? params?.fromChain ?? '')
+          .toString()
+          .toLowerCase()
+          .trim();
+        const fromChain = chainNameToId[rawChain] ?? undefined;
+        const result = await onVoiceOpenBridge({
+          fromChain,
+          fromToken: params?.from_token ?? params?.fromToken,
+          amount: params?.amount?.toString(),
+        });
+        return result.opened
+          ? {
+              status: 'opened',
+              message:
+                'LI.FI bridge widget is open. The user signs on the source chain in that popup; once USDC lands on Solana, suggest they say "join the pool".',
+            }
+          : { status: 'error', error: result.message ?? 'Failed to open bridge.' };
       },
 
       // ─── join_pool: voice → on-chain join (modal as fallback) ──────────
