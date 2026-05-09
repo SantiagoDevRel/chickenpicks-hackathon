@@ -1,0 +1,1090 @@
+{
+  "address": "Cdd53o33BTaZcmpZ55TemGPmZRR2mbMiYDEU6Mecb3ut",
+  "metadata": {
+    "name": "chickenpicks_onchain",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "ChickenPicks OnChain — football prediction market"
+  },
+  "instructions": [
+    {
+      "name": "add_match",
+      "discriminator": [
+        244,
+        31,
+        63,
+        85,
+        118,
+        57,
+        206,
+        178
+      ],
+      "accounts": [
+        {
+          "name": "polla",
+          "writable": true
+        },
+        {
+          "name": "match_account",
+          "writable": true
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "polla"
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "match_index",
+          "type": "u8"
+        },
+        {
+          "name": "home_team",
+          "type": {
+            "array": [
+              "u8",
+              16
+            ]
+          }
+        },
+        {
+          "name": "away_team",
+          "type": {
+            "array": [
+              "u8",
+              16
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "claim_prize",
+      "docs": [
+        "Strict signer: ctx.accounts.predictor.key() must equal prediction.predictor."
+      ],
+      "discriminator": [
+        157,
+        233,
+        139,
+        121,
+        246,
+        62,
+        234,
+        235
+      ],
+      "accounts": [
+        {
+          "name": "polla",
+          "writable": true
+        },
+        {
+          "name": "polla_vault",
+          "writable": true
+        },
+        {
+          "name": "prediction",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  101,
+                  100,
+                  105,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "polla"
+              },
+              {
+                "kind": "account",
+                "path": "predictor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "predictor_usdc_ata",
+          "writable": true
+        },
+        {
+          "name": "predictor",
+          "signer": true,
+          "relations": [
+            "prediction"
+          ]
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_polla",
+      "discriminator": [
+        251,
+        194,
+        167,
+        201,
+        56,
+        159,
+        237,
+        187
+      ],
+      "accounts": [
+        {
+          "name": "polla",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  108,
+                  108,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "arg",
+                "path": "name"
+              }
+            ]
+          }
+        },
+        {
+          "name": "usdc_mint",
+          "docs": [
+            "USDC mint for entry payments. Pinned per network in .env / constants.ts."
+          ]
+        },
+        {
+          "name": "vault",
+          "docs": [
+            "Vault — token account owned by the Polla PDA, holds entry USDC."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "polla"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "usdc_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "tournament",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "entry_amount",
+          "type": "u64"
+        },
+        {
+          "name": "num_matches",
+          "type": "u8"
+        },
+        {
+          "name": "prize_distribution",
+          "type": {
+            "array": [
+              "u8",
+              10
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize_platform",
+      "discriminator": [
+        119,
+        201,
+        101,
+        45,
+        75,
+        122,
+        89,
+        3
+      ],
+      "accounts": [
+        {
+          "name": "platform",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  116,
+                  102,
+                  111,
+                  114,
+                  109
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "docs": [
+            "The authority is also the treasury for hackathon scope.",
+            "Must match deployer wallet to satisfy admin-only ixs (set_match_result)."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "join_polla",
+      "discriminator": [
+        212,
+        186,
+        92,
+        77,
+        158,
+        133,
+        244,
+        31
+      ],
+      "accounts": [
+        {
+          "name": "polla",
+          "writable": true
+        },
+        {
+          "name": "polla_vault",
+          "docs": [
+            "Vault ATA owned by the Polla PDA. Verified by ATA constraint."
+          ],
+          "writable": true
+        },
+        {
+          "name": "participant_usdc_ata",
+          "docs": [
+            "Participant's USDC token account — funded with at least entry_amount."
+          ],
+          "writable": true
+        },
+        {
+          "name": "prediction",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  101,
+                  100,
+                  105,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "polla"
+              },
+              {
+                "kind": "account",
+                "path": "participant"
+              }
+            ]
+          }
+        },
+        {
+          "name": "participant",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "set_match_result",
+      "discriminator": [
+        161,
+        212,
+        206,
+        186,
+        46,
+        53,
+        111,
+        198
+      ],
+      "accounts": [
+        {
+          "name": "platform",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  116,
+                  102,
+                  111,
+                  114,
+                  109
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "polla",
+          "writable": true
+        },
+        {
+          "name": "match_account",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "platform"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "match_index",
+          "type": "u8"
+        },
+        {
+          "name": "home_score",
+          "type": "i8"
+        },
+        {
+          "name": "away_score",
+          "type": "i8"
+        }
+      ]
+    },
+    {
+      "name": "settle_polla",
+      "docs": [
+        "Permissionless trigger. Caller must pass:",
+        "- All N Match accounts (in any order; we sort by match_index internally)",
+        "where N == polla.num_matches.",
+        "- All P Prediction accounts (in any order) where P == polla.num_participants.",
+        "Match accounts come FIRST, then Prediction accounts. Both must reference",
+        "the same polla. Program verifies completeness, scores on-chain via the",
+        "5/3/2/0 rule, sorts by (points DESC, submitted_at_slot ASC), writes",
+        "final_rank to each Prediction, transfers 5% fee to treasury, marks",
+        "polla.status = Settled."
+      ],
+      "discriminator": [
+        39,
+        114,
+        173,
+        230,
+        248,
+        197,
+        77,
+        54
+      ],
+      "accounts": [
+        {
+          "name": "platform",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  116,
+                  102,
+                  111,
+                  114,
+                  109
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "polla",
+          "writable": true
+        },
+        {
+          "name": "polla_vault",
+          "writable": true
+        },
+        {
+          "name": "treasury_usdc_ata",
+          "docs": [
+            "Treasury USDC ATA — must be owned by platform.treasury."
+          ],
+          "writable": true
+        },
+        {
+          "name": "caller",
+          "docs": [
+            "Anyone — pays the tx fee, receives nothing."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "submit_prediction",
+      "discriminator": [
+        193,
+        113,
+        41,
+        36,
+        160,
+        60,
+        247,
+        55
+      ],
+      "accounts": [
+        {
+          "name": "polla"
+        },
+        {
+          "name": "prediction",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  101,
+                  100,
+                  105,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "polla"
+              },
+              {
+                "kind": "account",
+                "path": "predictor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "predictor",
+          "signer": true,
+          "relations": [
+            "prediction"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "scores",
+          "type": {
+            "array": [
+              {
+                "defined": {
+                  "name": "PredictionScore"
+                }
+              },
+              10
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Match",
+      "discriminator": [
+        236,
+        63,
+        169,
+        38,
+        15,
+        56,
+        196,
+        162
+      ]
+    },
+    {
+      "name": "PlatformConfig",
+      "discriminator": [
+        160,
+        78,
+        128,
+        0,
+        248,
+        83,
+        230,
+        160
+      ]
+    },
+    {
+      "name": "Polla",
+      "discriminator": [
+        16,
+        59,
+        245,
+        148,
+        84,
+        123,
+        204,
+        157
+      ]
+    },
+    {
+      "name": "Prediction",
+      "discriminator": [
+        98,
+        127,
+        141,
+        187,
+        218,
+        33,
+        8,
+        14
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "PlatformAlreadyInitialized",
+      "msg": "Platform already initialized"
+    },
+    {
+      "code": 6001,
+      "name": "PollaLocked",
+      "msg": "Polla is not accepting new predictions"
+    },
+    {
+      "code": 6002,
+      "name": "PollaNotOpen",
+      "msg": "Polla must be Open to submit predictions"
+    },
+    {
+      "code": 6003,
+      "name": "PollaNotLocked",
+      "msg": "Polla must be Locked to settle"
+    },
+    {
+      "code": 6004,
+      "name": "PollaNotSettled",
+      "msg": "Polla must be Settled to claim"
+    },
+    {
+      "code": 6005,
+      "name": "PollaAlreadySettled",
+      "msg": "Polla is already settled"
+    },
+    {
+      "code": 6006,
+      "name": "MatchIndexOutOfRange",
+      "msg": "Match index out of range for this polla"
+    },
+    {
+      "code": 6007,
+      "name": "MatchAlreadySettled",
+      "msg": "Match already settled — cannot overwrite"
+    },
+    {
+      "code": 6008,
+      "name": "MatchesNotSettled",
+      "msg": "Not all matches are settled — cannot trigger settlement"
+    },
+    {
+      "code": 6009,
+      "name": "UnauthorizedAuthority",
+      "msg": "Caller is not the platform authority"
+    },
+    {
+      "code": 6010,
+      "name": "PredictionAccountCountMismatch",
+      "msg": "Number of Prediction accounts does not match polla.num_participants"
+    },
+    {
+      "code": 6011,
+      "name": "MatchAccountCountMismatch",
+      "msg": "Number of Match accounts does not match polla.num_matches"
+    },
+    {
+      "code": 6012,
+      "name": "MatchPollaMismatch",
+      "msg": "A Match account belongs to a different polla"
+    },
+    {
+      "code": 6013,
+      "name": "PredictionPollaMismatch",
+      "msg": "A Prediction account belongs to a different polla"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidMatchOrdering",
+      "msg": "Match indices must cover 0..num_matches with no gaps and no duplicates"
+    },
+    {
+      "code": 6015,
+      "name": "InvalidPrizeDistribution",
+      "msg": "Prize distribution sum must be <= 100"
+    },
+    {
+      "code": 6016,
+      "name": "InvalidMatchCount",
+      "msg": "num_matches must be in 1..=10"
+    },
+    {
+      "code": 6017,
+      "name": "PredictorMismatch",
+      "msg": "Strict signer check failed: prediction.predictor != ctx.accounts.predictor"
+    },
+    {
+      "code": 6018,
+      "name": "AlreadyClaimed",
+      "msg": "Prize already claimed"
+    },
+    {
+      "code": 6019,
+      "name": "NotInPrizeTier",
+      "msg": "Predictor is not in the prize tier"
+    },
+    {
+      "code": 6020,
+      "name": "NumericalOverflow",
+      "msg": "Numerical overflow"
+    }
+  ],
+  "types": [
+    {
+      "name": "Match",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "polla",
+            "type": "pubkey"
+          },
+          {
+            "name": "match_index",
+            "type": "u8"
+          },
+          {
+            "name": "home_team",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "away_team",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "home_score",
+            "docs": [
+              "-1 (UNSET_SCORE) until set_match_result is called."
+            ],
+            "type": "i8"
+          },
+          {
+            "name": "away_score",
+            "type": "i8"
+          },
+          {
+            "name": "settled",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PlatformConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Polla",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "tournament",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "entry_amount",
+            "type": "u64"
+          },
+          {
+            "name": "usdc_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "num_matches",
+            "type": "u8"
+          },
+          {
+            "name": "matches_settled",
+            "type": "u8"
+          },
+          {
+            "name": "num_participants",
+            "type": "u32"
+          },
+          {
+            "name": "total_pool",
+            "type": "u64"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "PollaStatus"
+              }
+            }
+          },
+          {
+            "name": "locked_at_slot",
+            "type": "u64"
+          },
+          {
+            "name": "prize_distribution",
+            "docs": [
+              "Percentage points 0..=100 for top N predictors (e.g. [50, 30, 20, 0, ...]).",
+              "Sum must be <= 100. Applied to (total_pool - 5% fee). Index = final_rank."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                10
+              ]
+            }
+          },
+          {
+            "name": "winners_settled",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PollaStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Open"
+          },
+          {
+            "name": "Locked"
+          },
+          {
+            "name": "Settled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Prediction",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "polla",
+            "type": "pubkey"
+          },
+          {
+            "name": "predictor",
+            "type": "pubkey"
+          },
+          {
+            "name": "scores",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "PredictionScore"
+                  }
+                },
+                10
+              ]
+            }
+          },
+          {
+            "name": "submitted_at_slot",
+            "type": "u64"
+          },
+          {
+            "name": "points",
+            "type": "u32"
+          },
+          {
+            "name": "final_rank",
+            "docs": [
+              "0..MAX_PRIZE_TIERS once settled and in prize tier; UNRANKED (0xFF) otherwise."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "claimed",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PredictionScore",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "home",
+            "type": "i8"
+          },
+          {
+            "name": "away",
+            "type": "i8"
+          }
+        ]
+      }
+    }
+  ]
+}

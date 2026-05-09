@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "ChickenPicks OnChain",
+    "slug": "chickenpicks-onchain",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/pollitos/pollito_capitan_lider.webp",
+    "scheme": "chickenpicks",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/pollitos/pollito_capitan_lider.webp",
+      "resizeMode": "contain",
+      "backgroundColor": "#080C10"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.chickenpicks.onchain"
+    },
+    "android": {
+      "package": "app.chickenpicks.onchain",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/pollitos/pollito_capitan_lider.webp",
+        "backgroundColor": "#080C10"
+      },
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "tsconfigPaths": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      },
+      "privyAppId": "REPLACE_WITH_PRIVY_APP_ID",
+      "privyClientId": "REPLACE_WITH_PRIVY_CLIENT_ID",
+      "solanaRpcUrl": "https://api.devnet.solana.com",
+      "programId": "Cdd53o33BTaZcmpZ55TemGPmZRR2mbMiYDEU6Mecb3ut",
+      "usdcMint": "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr"
+    }
+  }
+}
