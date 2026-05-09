@@ -13,7 +13,8 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 const config = getDefaultConfig(projectRoot);
 
 // Watch the entire monorepo so workspace package changes hot-reload.
-config.watchFolders = [workspaceRoot];
+// (Append, don't replace — Expo's defaults must stay.)
+config.watchFolders = [...(config.watchFolders ?? []), workspaceRoot];
 
 // Resolve modules from local + workspace node_modules. pnpm flattens
 // peer deps at the workspace root, so this must come second.
