@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { AnchorProvider, BN, Program, type Idl } from '@coral-xyz/anchor';
@@ -46,7 +47,7 @@ type PoolWithMatches = {
   matches: { idx: number; home: string; away: string; homeScore: number; awayScore: number; settled: boolean }[];
 };
 
-export default function AdminPage(): ReactElement {
+export default function AdminPage(): ReactNode {
   const { authenticated, ready, user } = usePrivy();
   const email = user?.email?.address ?? null;
 
