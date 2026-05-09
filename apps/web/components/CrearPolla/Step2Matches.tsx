@@ -1,13 +1,12 @@
 'use client';
 
 // Step 2 — pick fixtures from the selected tournament.
-// Calls /api/espn/fixtures?league=<slug>&from=YYYYMMDD&to=YYYYMMDD on mount
-// (and whenever the date range or tournament changes). Default range is
-// today → +30 days; user can widen up to the API cap of 60 days.
 //
-// MAX_MATCHES is the on-chain hard cap from constants.rs (10). We enforce it
-// client-side to give immediate feedback — but the on-chain instruction will
-// reject anything over that anyway.
+// Calls /api/espn/fixtures?league=<slug>&from=YYYYMMDD&to=YYYYMMDD on mount.
+// Range is fixed at today → +365 days (the API caps at 60 in a single call,
+// so we paginate 6× under the hood). MAX_MATCHES (10) is the on-chain hard
+// cap from constants.rs — pollas are bounded so settle_polla can rank them
+// in a single tx without blowing the compute budget.
 
 import { useEffect, useMemo, useState } from 'react';
 import { MAX_MATCHES } from '@chickenpicks/shared';
@@ -21,22 +20,14 @@ import type { Fixture } from '@/lib/espn/fixtures';
 export type Step2Value = {
   /** Fixture ids the user has selected. We enforce MAX_MATCHES (10). */
   selected: Fixture[];
-  /** Date range used to query fixtures. Persisted across step transitions. */
-  fromYmd: string; // YYYY-MM-DD (input[type=date] format)
-  toYmd: string;
 };
 
 // --- Date helpers -------------------------------------------------------------
 
-function ymdToday(offsetDays = 0): string {
+function ymdCompact(offsetDays = 0): string {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
-}
-
-/** Convert YYYY-MM-DD (HTML date input) → YYYYMMDD (ESPN/our API). */
-function dashedToCompact(ymd: string): string {
-  return ymd.replace(/-/g, '');
+  return d.toISOString().slice(0, 10).replace(/-/g, '');
 }
 
 function formatKickoff(iso: string): string {
@@ -52,11 +43,35 @@ function formatKickoff(iso: string): string {
 
 /** Default Step 2 starting state — used by the parent wizard the first time. */
 export function defaultStep2(): Step2Value {
-  return {
-    selected: [],
-    fromYmd: ymdToday(0),
-    toYmd: ymdToday(30),
-  };
+  return { selected: [] };
+}
+
+/**
+ * Fetch upcoming fixtures across a long horizon by paginating the API in
+ * 60-day windows (the route caps a single call at 60).
+ */
+async function fetchUpcoming(slug: string, days = 365): Promise<Fixture[]> {
+  const acc: Fixture[] = [];
+  for (let offset = 0; offset < days; offset += 60) {
+    const span = Math.min(60, days - offset);
+    const from = ymdCompact(offset);
+    const to = ymdCompact(offset + span);
+    const url = `/api/espn/fixtures?league=${encodeURIComponent(slug)}&from=${from}&to=${to}`;
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const j = (await res.json()) as { fixtures?: Fixture[] };
+      if (j.fixtures) acc.push(...j.fixtures);
+    } catch {
+      // ignore individual window errors; keep what we have so far.
+    }
+  }
+  // De-dup by id and sort by date.
+  const dedup = new Map<string, Fixture>();
+  for (const f of acc) dedup.set(f.id, f);
+  const out = Array.from(dedup.values());
+  out.sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+  return out.filter((f) => f.status !== 'post');
 }
 
 export function Step2Matches({
@@ -77,7 +92,7 @@ export function Step2Matches({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch whenever league or date range changes.
+  // Fetch whenever league changes.
   useEffect(() => {
     if (!tournament) return;
     let cancelled = false;
@@ -85,18 +100,8 @@ export function Step2Matches({
       setLoading(true);
       setError(null);
       try {
-        const url =
-          `/api/espn/fixtures?league=${encodeURIComponent(tournament!.leagueSlug)}` +
-          `&from=${dashedToCompact(value.fromYmd)}` +
-          `&to=${dashedToCompact(value.toYmd)}`;
-        const res = await fetch(url, { cache: 'no-store' });
-        const j = (await res.json()) as { fixtures?: Fixture[]; error?: string };
+        const upcoming = await fetchUpcoming(tournament!.leagueSlug);
         if (cancelled) return;
-        if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
-        // Filter out finished matches from the picker — there's nothing to
-        // predict. Keep "pre" (scheduled) and "in" (live, edge case). We hide
-        // 'post' which avoids users accidentally locking a settled match.
-        const upcoming = (j.fixtures ?? []).filter((f) => f.status !== 'post');
         setFixtures(upcoming);
       } catch (e) {
         if (!cancelled) {
@@ -111,9 +116,8 @@ export function Step2Matches({
     return () => {
       cancelled = true;
     };
-  }, [tournament, value.fromYmd, value.toYmd]);
+  }, [tournament]);
 
-  // Selected ids for fast lookup in the render loop.
   const selectedIds = useMemo(
     () => new Set(value.selected.map((f) => f.id)),
     [value.selected],
@@ -123,29 +127,45 @@ export function Step2Matches({
     const isSelected = selectedIds.has(f.id);
     if (isSelected) {
       onChange({
-        ...value,
         selected: value.selected.filter((x) => x.id !== f.id),
       });
     } else {
       if (value.selected.length >= MAX_MATCHES) return;
-      onChange({ ...value, selected: [...value.selected, f] });
+      onChange({ selected: [...value.selected, f] });
     }
   }
 
   const canContinue = value.selected.length >= 1;
 
+  // Group fixtures by month for easier scanning of long lists (World Cup,
+  // Champions League knockouts, etc.). MUST be declared before any
+  // conditional return — Hooks rules.
+  const byMonth = useMemo(() => {
+    if (!fixtures) return [];
+    const groups = new Map<string, Fixture[]>();
+    for (const f of fixtures) {
+      const key = new Date(f.scheduledAt).toLocaleString(undefined, {
+        month: 'long',
+        year: 'numeric',
+      });
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(f);
+    }
+    return Array.from(groups.entries());
+  }, [fixtures]);
+
   if (!tournament) {
     return (
       <div className="lp-card p-6 text-center">
         <p className="text-red-alert text-sm">
-          Torneo inválido. Volvé al paso anterior.
+          Invalid tournament — go back to step 1.
         </p>
         <button
           type="button"
           onClick={onBack}
           className="mt-4 rounded-md border border-border-default bg-bg-card/50 px-4 py-2 font-display tracking-[0.08em] text-xs text-text-muted hover:text-text-primary"
         >
-          ← Atrás
+          ← Back
         </button>
       </div>
     );
@@ -155,19 +175,26 @@ export function Step2Matches({
     <div className="space-y-6">
       {/* Header — selected tournament + selection counter */}
       <section className="lp-card p-5 sm:p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-2xl leading-none">{tournament.emoji}</span>
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={tournament.logoUrl}
+            alt=""
+            width={40}
+            height={40}
+            className="flex-shrink-0"
+          />
           <div className="flex-1 min-w-0">
-            <div className="font-display tracking-[0.08em] text-[10px] text-text-muted">
-              TORNEO
+            <div className="font-display tracking-[0.08em] text-xs text-text-muted">
+              TOURNAMENT
             </div>
             <div className="font-display tracking-[0.04em] text-base text-text-primary uppercase truncate">
               {tournament.name}
             </div>
           </div>
           <div className="text-right">
-            <div className="font-display tracking-[0.08em] text-[10px] text-text-muted">
-              SELECCIONADOS
+            <div className="font-display tracking-[0.08em] text-xs text-text-muted">
+              PICKED
             </div>
             <div
               className={`font-display tracking-[0.04em] text-lg ${
@@ -181,107 +208,89 @@ export function Step2Matches({
             </div>
           </div>
         </div>
-
-        {/* Date range pickers */}
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="font-display tracking-[0.08em] text-[10px] text-text-muted">
-              DESDE
-            </span>
-            <input
-              type="date"
-              value={value.fromYmd}
-              max={value.toYmd}
-              onChange={(e) =>
-                onChange({ ...value, fromYmd: e.target.value, selected: [] })
-              }
-              className="mt-1 w-full rounded-md bg-bg-base/60 border border-border-default px-3 py-2 text-sm text-text-primary focus:border-gold focus:outline-none"
-            />
-          </label>
-          <label className="block">
-            <span className="font-display tracking-[0.08em] text-[10px] text-text-muted">
-              HASTA
-            </span>
-            <input
-              type="date"
-              value={value.toYmd}
-              min={value.fromYmd}
-              onChange={(e) =>
-                onChange({ ...value, toYmd: e.target.value, selected: [] })
-              }
-              className="mt-1 w-full rounded-md bg-bg-base/60 border border-border-default px-3 py-2 text-sm text-text-primary focus:border-gold focus:outline-none"
-            />
-          </label>
-        </div>
+        <p className="mt-3 text-xs text-text-muted">
+          Pick up to {MAX_MATCHES} matches the pool will run on. The on-chain
+          program ranks every prediction in one transaction at settle time, so
+          we cap matches per pool to keep that single tx within Solana&apos;s
+          compute budget.
+        </p>
       </section>
 
-      {/* Fixture list */}
+      {/* Fixture list grouped by month */}
       <section className="lp-card p-5 sm:p-6">
-        <h2 className="lp-section-title mb-4">Partidos</h2>
+        <h2 className="lp-section-title mb-4">Upcoming matches</h2>
 
         {loading && (
           <p className="text-text-muted text-sm font-display tracking-[0.08em] text-center py-8">
-            CARGANDO PARTIDOS…
+            LOADING FIXTURES…
           </p>
         )}
 
         {!loading && error && (
           <div className="rounded-md border border-red-alert/30 bg-red-alert/5 p-3">
-            <p className="text-xs text-red-alert">No pude traer fixtures: {error}</p>
+            <p className="text-xs text-red-alert">
+              Couldn&apos;t fetch fixtures: {error}
+            </p>
           </div>
         )}
 
         {!loading && !error && fixtures && fixtures.length === 0 && (
           <div className="text-center py-8">
             <p className="text-text-muted text-sm">
-              No hay partidos en este rango. Probá ampliando las fechas.
+              No upcoming matches in this tournament.
             </p>
           </div>
         )}
 
         {!loading && !error && fixtures && fixtures.length > 0 && (
-          <ul className="space-y-2">
-            {fixtures.map((f) => (
-              <FixtureCard
-                key={f.id}
-                fixture={f}
-                selected={selectedIds.has(f.id)}
-                disabled={
-                  !selectedIds.has(f.id) &&
-                  value.selected.length >= MAX_MATCHES
-                }
-                onToggle={() => toggleFixture(f)}
-              />
+          <div className="space-y-5">
+            {byMonth.map(([month, list]) => (
+              <div key={month}>
+                <div className="font-display tracking-[0.08em] text-xs text-text-muted uppercase mb-2">
+                  {month}
+                </div>
+                <ul className="space-y-2">
+                  {list.map((f) => (
+                    <FixtureCard
+                      key={f.id}
+                      fixture={f}
+                      selected={selectedIds.has(f.id)}
+                      disabled={
+                        !selectedIds.has(f.id) &&
+                        value.selected.length >= MAX_MATCHES
+                      }
+                      onToggle={() => toggleFixture(f)}
+                    />
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
 
         {value.selected.length >= MAX_MATCHES && (
-          <p className="mt-3 text-[11px] text-amber font-display tracking-[0.04em]">
-            Máximo {MAX_MATCHES} partidos por polla. Deseleccioná uno para
-            cambiar.
+          <p className="mt-3 text-xs text-amber font-display tracking-[0.04em]">
+            Max {MAX_MATCHES} matches per pool. Deselect one to swap.
           </p>
         )}
       </section>
 
       {/* Footer CTAs */}
       <div className="flex items-center justify-between gap-3 pt-2">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onBack}
-            className="rounded-md border border-border-default bg-bg-card/50 backdrop-blur px-4 py-3 font-display tracking-[0.08em] text-xs text-text-muted hover:text-text-primary hover:border-border-strong transition"
-          >
-            ← Atrás
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onBack}
+          className="rounded-md border border-border-default bg-bg-card/50 backdrop-blur px-4 py-3 font-display tracking-[0.08em] text-xs text-text-muted hover:text-text-primary hover:border-border-strong transition"
+        >
+          ← Back
+        </button>
         <button
           type="button"
           onClick={onContinue}
           disabled={!canContinue}
           className="rounded-md bg-gold px-6 py-3 font-display tracking-[0.08em] text-xs text-black hover:bg-amber disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
-          Continuar →
+          Continue →
         </button>
       </div>
     </div>
@@ -313,7 +322,6 @@ function FixtureCard({
               : 'border-border-default bg-bg-base/40 hover:border-border-strong'
         }`}
       >
-        {/* Home */}
         <div className="flex-1 flex items-center gap-2 min-w-0">
           {fixture.homeLogo && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -330,11 +338,10 @@ function FixtureCard({
           </span>
         </div>
 
-        <span className="font-display text-text-muted text-[10px] tracking-[0.08em]">
+        <span className="font-display text-text-muted text-xs tracking-[0.08em]">
           VS
         </span>
 
-        {/* Away */}
         <div className="flex-1 flex items-center gap-2 min-w-0 justify-end">
           <span className="font-display tracking-[0.04em] text-xs uppercase text-text-primary truncate text-right">
             {fixture.awayTeam}
@@ -351,7 +358,6 @@ function FixtureCard({
           )}
         </div>
 
-        {/* Selection circle + kickoff time */}
         <div className="flex flex-col items-end gap-1 ml-1 flex-shrink-0">
           <span
             className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition ${
@@ -364,15 +370,14 @@ function FixtureCard({
           </span>
         </div>
       </button>
-      <div className="mt-1 text-[10px] text-text-muted font-display tracking-[0.04em] uppercase pl-3">
+      <div className="mt-1 text-xs text-text-muted font-display tracking-[0.04em] uppercase pl-3">
         {formatKickoff(fixture.scheduledAt)}
         {fixture.status === 'in' && (
-          <span className="ml-2 text-amber">· EN VIVO</span>
+          <span className="ml-2 text-amber">· LIVE</span>
         )}
       </div>
     </li>
   );
 }
 
-// Re-export TOURNAMENTS so the wizard can iterate without re-importing.
 export { TOURNAMENTS };

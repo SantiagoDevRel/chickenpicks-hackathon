@@ -140,7 +140,14 @@ function TournamentRadio({
             : 'border-border-default bg-bg-base/40 hover:border-border-strong'
         }`}
       >
-        <span className="text-xl leading-none">{tournament.emoji}</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={tournament.logoUrl}
+          alt=""
+          width={28}
+          height={28}
+          className="flex-shrink-0"
+        />
         <span
           className={`flex-1 text-left font-display tracking-[0.04em] text-sm uppercase ${
             selected ? 'text-text-primary' : 'text-text-secondary'
