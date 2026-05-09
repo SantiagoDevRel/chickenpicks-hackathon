@@ -190,11 +190,22 @@ export function VoiceAgent({
         throw new Error(j.error || `Server returned ${res.status}`);
       }
       const { signedUrl } = (await res.json()) as { signedUrl: string };
-      // Request mic permission (most browsers prompt automatically once
-      // the WebSocket attempts to access the audio device, but doing it
-      // here gives a cleaner error if denied).
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      await conversation.startSession({ signedUrl });
+
+      // Pass the pool pubkey + auth state as dynamic variables so the
+      // agent's system prompt can interpolate them via {{current_pool_id}}
+      // and {{is_signed_in}} — saves a round-trip tool call to discover
+      // context the page already knows.
+      await conversation.startSession({
+        signedUrl,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        dynamicVariables: {
+          current_pool_id: pollaPubkey ?? '',
+          on_pool_page: pollaPubkey ? 'yes' : 'no',
+          is_signed_in: wallet?.address ? 'yes' : 'no',
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
     } catch (e) {
       setError((e as Error).message);
     }
