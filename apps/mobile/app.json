@@ -56,7 +56,11 @@
       "privyClientId": "client-WY6YiXfBEkoNKK9JCEeXLCrDVJQBGd3xuDYSvUZ8n2akn",
       "solanaRpcUrl": "https://api.devnet.solana.com",
       "programId": "Cdd53o33BTaZcmpZ55TemGPmZRR2mbMiYDEU6Mecb3ut",
-      "usdcMint": "sWjZfTkMM2zbNBx1YwgYGmsXfZpA1yo5HkhSqB9AUXC"
-    }
+      "usdcMint": "sWjZfTkMM2zbNBx1YwgYGmsXfZpA1yo5HkhSqB9AUXC",
+      "eas": {
+        "projectId": "ef0f9067-0ebe-465b-ae8f-1eb863ed7e9f"
+      }
+    },
+    "owner": "santiagodevrel"
   }
 }
