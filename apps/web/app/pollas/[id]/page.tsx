@@ -35,6 +35,7 @@ import {
   type JoinConfirmState,
 } from '@/components/JoinConfirmModal';
 import { pollitoImage, usePollito } from '@/lib/usePollito';
+import { resolvePagePath } from '@/lib/navRoutes';
 
 const programId = new PublicKey(PROGRAM_ID);
 const usdcMintKey = new PublicKey(USDC_MINT);
@@ -766,13 +767,7 @@ export default function PollaDetailPage() {
             }
           }}
           onGoToPage={async (page: string) => {
-            const routes: Record<string, string> = {
-              home: '/',
-              pools: '/pollas',
-              admin: '/admin',
-              profile: '/profile',
-            };
-            const path = routes[page.toLowerCase().trim()];
+            const path = resolvePagePath(page);
             if (!path)
               return { navigated: false, error: `Unknown page: ${page}` };
             window.location.assign(path);

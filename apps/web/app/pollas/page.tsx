@@ -14,6 +14,7 @@ import {
 } from '@chickenpicks/shared';
 import { BrandHeader } from '@/components/BrandHeader';
 import { VoiceAgent } from '@/components/VoiceAgent';
+import { resolvePagePath } from '@/lib/navRoutes';
 
 type RawPolla = {
   creator: PublicKey;
@@ -152,13 +153,7 @@ export default function PollasPage() {
   );
   const handleGoToPage = useCallback(
     async (page: string) => {
-      const routes: Record<string, string> = {
-        home: '/',
-        pools: '/pollas',
-        admin: '/admin',
-        profile: '/profile',
-      };
-      const path = routes[page.toLowerCase().trim()];
+      const path = resolvePagePath(page);
       if (!path) return { navigated: false, error: `Unknown page: ${page}` };
       router.push(path);
       return { navigated: true };

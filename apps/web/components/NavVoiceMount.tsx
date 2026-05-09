@@ -4,18 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { VoiceAgent } from './VoiceAgent';
-
-// Friendly page names the agent can navigate to. Keep keys lowercase, the
-// agent normalises before calling go_to_page.
-const PAGE_ROUTES: Record<string, string> = {
-  home: '/',
-  pools: '/pollas',
-  pool: '/pollas',
-  'pool list': '/pollas',
-  pollas: '/pollas',
-  admin: '/admin',
-  profile: '/profile',
-};
+import { resolvePagePath } from '@/lib/navRoutes';
 
 /**
  * Voice agent wrapper for pages that don't carry a specific pool context.
@@ -29,11 +18,11 @@ export function NavVoiceMount() {
 
   const goToPage = useCallback(
     async (page: string) => {
-      const path = PAGE_ROUTES[page.toLowerCase().trim()];
+      const path = resolvePagePath(page);
       if (!path) {
         return {
           navigated: false,
-          error: `Unknown page "${page}". Try: home, pools, admin.`,
+          error: `Unknown page "${page}". Try: home, pools, admin, profile.`,
         };
       }
       router.push(path);
