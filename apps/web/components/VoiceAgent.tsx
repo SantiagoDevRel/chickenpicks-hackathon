@@ -155,21 +155,59 @@ export function VoiceAgent({
       },
 
       // ─── submit_picks: voice → confirm modal → on-chain submit ─────────
-      // The agent passes an array of {home, away} scores. The parent page
-      // owns the modal + signing flow; we just dispatch + await its result.
-      submit_picks: async ({
-        scores,
-      }: {
-        scores: { home: number; away: number }[];
-      }) => {
+      // Resilient input parsing: ElevenLabs' tool param schema can mangle
+      // capitalisation (Home vs home) or wrap the array in different shapes.
+      // Accept whatever the agent sends and normalise.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      submit_picks: async (params: any) => {
         if (!onVoiceSubmitPicks) {
           return {
             status: 'error',
             error:
-              'Submit not available on this page. Open a specific pool to make picks.',
+              'Submit not available — open a specific pool page first.',
           };
         }
-        const result = await onVoiceSubmitPicks(scores);
+        // Normalize a single score entry: tolerate Home/home, Away/away.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const normEntry = (s: any): { home: number; away: number } => {
+          const h = s?.home ?? s?.Home ?? 0;
+          const a = s?.away ?? s?.Away ?? 0;
+          return {
+            home: typeof h === 'number' ? h : Number(h) || 0,
+            away: typeof a === 'number' ? a : Number(a) || 0,
+          };
+        };
+        // Accept: { scores: [...] } OR a bare array OR { home_scores, away_scores } CSV strings
+        let normalized: { home: number; away: number }[] = [];
+        if (Array.isArray(params)) {
+          normalized = params.map(normEntry);
+        } else if (Array.isArray(params?.scores)) {
+          normalized = params.scores.map(normEntry);
+        } else if (
+          typeof params?.home_scores === 'string' &&
+          typeof params?.away_scores === 'string'
+        ) {
+          const homes = params.home_scores
+            .split(',')
+            .map((s: string) => Number(s.trim()) || 0);
+          const aways = params.away_scores
+            .split(',')
+            .map((s: string) => Number(s.trim()) || 0);
+          normalized = homes.map((h: number, i: number) => ({
+            home: h,
+            away: aways[i] ?? 0,
+          }));
+        } else {
+          return {
+            status: 'error',
+            error:
+              'Could not parse the scores. Expected { scores: [{ home, away }, ...] }.',
+          };
+        }
+        if (normalized.length === 0) {
+          return { status: 'error', error: 'Empty scores list.' };
+        }
+        const result = await onVoiceSubmitPicks(normalized);
         if (result.ok) {
           return { status: 'submitted', tx_signature: result.sig };
         }
