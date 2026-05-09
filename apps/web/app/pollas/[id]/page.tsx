@@ -34,10 +34,6 @@ import {
   JoinConfirmModal,
   type JoinConfirmState,
 } from '@/components/JoinConfirmModal';
-import {
-  BridgeModal,
-  type BridgeModalState,
-} from '@/components/BridgeModal';
 import { pollitoImage, usePollito } from '@/lib/usePollito';
 
 const programId = new PublicKey(PROGRAM_ID);
@@ -416,27 +412,6 @@ export default function PollaDetailPage() {
     }
   }
 
-  // ─── Voice → LI.FI bridge modal ─────────────────────────────────────────
-  const [bridgeState, setBridgeState] = useState<BridgeModalState>({
-    kind: 'closed',
-  });
-
-  const handleVoiceOpenBridge = useCallback(
-    async (p: { fromChain?: number; fromToken?: string; amount?: string }) => {
-      // Default to the pool's entry amount when the agent doesn't pass one —
-      // user shouldn't have to repeat what the pool already says.
-      const fallbackAmount = polla ? formatUsdc(polla.entryAmount) : undefined;
-      setBridgeState({
-        kind: 'open',
-        fromChain: p.fromChain,
-        fromToken: p.fromToken,
-        amount: p.amount ?? fallbackAmount,
-      });
-      return { opened: true };
-    },
-    [polla],
-  );
-
   // ─── Voice → join confirm modal → join_polla flow ──────────────────────
   const [joinConfirmState, setJoinConfirmState] = useState<JoinConfirmState>({
     kind: 'idle',
@@ -781,15 +756,8 @@ export default function PollaDetailPage() {
           pollaPubkey={pollaPubkey?.toBase58()}
           onVoiceSubmitPicks={handleVoiceSubmit}
           onVoiceJoinPool={handleVoiceJoin}
-          onVoiceOpenBridge={handleVoiceOpenBridge}
         />
       </div>
-
-      {/* LI.FI bridge widget — opened by the voice agent's open_bridge tool */}
-      <BridgeModal
-        state={bridgeState}
-        onClose={() => setBridgeState({ kind: 'closed' })}
-      />
 
       {/* Confirmation modal triggered by the voice agent's submit_picks tool */}
       <PicksConfirmModal
