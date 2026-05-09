@@ -1,6 +1,5 @@
-// User's prediction history. Calls program.account.prediction.all() with
-// a memcmp filter on the predictor pubkey, then enriches with the parent
-// polla's name + status.
+// User's prediction history. Fetches /api/predictions?wallet=... — server-side
+// Anchor decode bypasses Hermes' borsh decoder bug (same rationale as /pools).
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,12 +12,10 @@ import {
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { BN } from '@coral-xyz/anchor';
-import { PublicKey } from '@solana/web3.js';
-import { decodeFixedString, getReadOnlyProgram } from '@/lib/anchor';
-import { formatUsdc, statusKey } from '@/lib/format';
 import { useWallet } from '@/lib/useWallet';
 import { ConnectButton } from '@/components/ConnectButton';
+
+const PREDICTIONS_API = 'https://onchain.chickenpicks.app/api/predictions';
 
 const captain = require('../assets/pollitos/pollito_capitan_lider.webp');
 const waiting = require('../assets/pollitos/Pollito_esperando.webp');
@@ -48,75 +45,17 @@ export default function ProfileScreen() {
     async function load() {
       try {
         setLoading(true);
-        const program = getReadOnlyProgram();
-        // Anchor `Prediction` discriminator is auto-applied — we add a
-        // memcmp on the `predictor` field. Layout: [8 disc][32 polla]
-        // [32 predictor]… so offset = 8 + 32 = 40.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const preds = await (program.account as any).prediction.all([
-          {
-            memcmp: {
-              offset: 40,
-              bytes: userPubkey!.toBase58(),
-            },
-          },
-        ]);
+        const url = `${PREDICTIONS_API}?wallet=${userPubkey!.toBase58()}`;
+        const r = await fetch(url, { cache: 'no-store' });
+        const data = await r.json();
         if (cancelled) return;
-
-        // Enrich with parent polla
-        const pollaKeys = Array.from(
-          new Set(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            preds.map(({ account }: { account: any }) => account.polla.toBase58()),
-          ),
-        );
-        const pollaPdas = (pollaKeys as string[]).map((k) => new PublicKey(k));
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pollas = await (program.account as any).polla.fetchMultiple(pollaPdas);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pollaByKey: Record<string, any> = {};
-        pollaPdas.forEach((pk, i) => {
-          if (pollas[i]) pollaByKey[pk.toBase58()] = pollas[i];
-        });
-
-        const list: PredEntry[] = preds.map(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ({ account }: { account: any }) => {
-            const pk = account.polla.toBase58();
-            const polla = pollaByKey[pk];
-            return {
-              pollaPubkey: pk,
-              pollaName: polla ? decodeFixedString(polla.name) : '???',
-              tournament: polla ? decodeFixedString(polla.tournament) : '',
-              status: polla ? statusKey(polla.status) : 'OPEN',
-              points: account.points,
-              finalRank: account.finalRank,
-              claimed: account.claimed,
-              totalPoolUsdc: polla ? formatUsdc(polla.totalPool as BN) : '0.00',
-            };
-          },
-        );
-
-        // Sort: settled+unclaimed first, then locked, then open, then claimed
-        list.sort((a, b) => {
-          const score = (e: PredEntry) =>
-            e.status === 'SETTLED' && !e.claimed && e.finalRank !== 0xff
-              ? 0
-              : e.status === 'SETTLED'
-                ? 3
-                : e.status === 'LOCKED'
-                  ? 1
-                  : 2;
-          return score(a) - score(b);
-        });
-
-        setEntries(list);
+        if (!r.ok) throw new Error(data?.error ?? `HTTP ${r.status}`);
+        setEntries((data.entries ?? []) as PredEntry[]);
         setError(null);
       } catch (e) {
         if (!cancelled) {
           const err = e as Error;
-          const stackHead = (err.stack ?? '').split('\n').slice(0, 4).join('\n');
-          setError(`${err.message}\n\n${stackHead}`);
+          setError(err.message);
           // eslint-disable-next-line no-console
           console.warn('[profile.load] error:', err);
         }

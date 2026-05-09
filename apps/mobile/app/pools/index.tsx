@@ -1,33 +1,21 @@
-// Browse all pools — calls program.account.polla.all() with a read-only
-// wallet stub, filters to the configured USDC mint, and renders cards.
-// Mirrors apps/web/app/pollas/page.tsx logic.
+// Browse all pools — fetches from /api/pools (server-side Anchor decode).
+//
+// We used to call program.account.polla.all() directly here, but Hermes
+// (RN's JS engine) chokes inside Anchor's borsh decoder with
+// "undefined is not a function at decode" — even after polyfilling
+// structuredClone, Promise.withResolvers, findLast, etc. The server has
+// no Hermes gaps, so the server-side fetch is reliable. Mobile just
+// renders the JSON.
 import { useEffect, useState } from 'react';
 import { ScrollView, Text, View, ActivityIndicator, RefreshControl } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BN } from '@coral-xyz/anchor';
-import { PublicKey } from '@solana/web3.js';
-import { getReadOnlyProgram, decodeFixedString } from '@/lib/anchor';
-import { USDC_MINT } from '@/lib/constants';
-import { formatUsdc, statusKey } from '@/lib/format';
 import { PoolCard, type PoolCardData } from '@/components/PoolCard';
 import { ConnectButton } from '@/components/ConnectButton';
 
-const waiting = require('../../assets/pollitos/Pollito_esperando.webp');
+const POOLS_API = 'https://onchain.chickenpicks.app/api/pools';
 
-type RawPolla = {
-  creator: PublicKey;
-  name: number[];
-  tournament: number[];
-  entryAmount: BN;
-  usdcMint: PublicKey;
-  numMatches: number;
-  matchesSettled: number;
-  numParticipants: number;
-  totalPool: BN;
-  status: { open?: object; locked?: object; settled?: object };
-  prizeDistribution: number[];
-};
+const waiting = require('../../assets/pollitos/Pollito_esperando.webp');
 
 export default function PoolsScreen() {
   const [pools, setPools] = useState<PoolCardData[]>([]);
@@ -40,45 +28,19 @@ export default function PoolsScreen() {
     async function load() {
       try {
         setLoading(true);
-        const program = getReadOnlyProgram();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const accs = await (program.account as any).polla.all();
+        const r = await fetch(POOLS_API, { cache: 'no-store' });
+        const data = await r.json();
         if (cancelled) return;
-
-        const configuredMint = new PublicKey(USDC_MINT);
-        const filtered = accs.filter(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ({ account }: { account: any }) =>
-            (account as RawPolla).usdcMint.equals(configuredMint),
-        );
-
-        const cards: PoolCardData[] = filtered.map(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ({ publicKey, account }: { publicKey: PublicKey; account: any }) => {
-            const raw = account as RawPolla;
-            return {
-              pubkey: publicKey.toBase58(),
-              name: decodeFixedString(raw.name),
-              tournament: decodeFixedString(raw.tournament),
-              entryUsdc: formatUsdc(raw.entryAmount),
-              numMatches: raw.numMatches,
-              numParticipants: raw.numParticipants,
-              totalPoolUsdc: formatUsdc(raw.totalPool),
-              status: statusKey(raw.status),
-            };
-          },
-        );
-        cards.sort((a, b) => a.name.localeCompare(b.name));
+        if (!r.ok) {
+          throw new Error(data?.error ?? `HTTP ${r.status}`);
+        }
+        const cards: PoolCardData[] = (data.pools ?? []) as PoolCardData[];
         setPools(cards);
         setError(null);
       } catch (e) {
         if (!cancelled) {
           const err = e as Error;
-          // Surface stack so we can debug "undefined is not a function" type
-          // errors on real devices via the on-screen banner (no adb logcat
-          // available on Play Protect-locked phones).
-          const stackHead = (err.stack ?? '').split('\n').slice(0, 4).join('\n');
-          setError(`${err.message}\n\n${stackHead}`);
+          setError(err.message);
           // eslint-disable-next-line no-console
           console.warn('[pools.load] error:', err);
         }
