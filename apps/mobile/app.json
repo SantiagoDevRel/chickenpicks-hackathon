@@ -52,9 +52,6 @@
       "router": {
         "origin": false
       },
-      "eas": {
-        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
-      },
       "privyAppId": "cmoxe0k3200fr0ck1s4qyiquc",
       "privyClientId": "client-WY6YiXfBEkoNKK9JCEeXLCrDVJQBGd3xuDYSvUZ8n2akn",
       "solanaRpcUrl": "https://api.devnet.solana.com",

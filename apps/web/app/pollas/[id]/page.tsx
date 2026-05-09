@@ -743,30 +743,7 @@ export default function PollaDetailPage() {
     <main className="min-h-screen">
       <BrandHeader />
 
-      {/* Floating voice agent button */}
-      <div className="fixed bottom-6 right-6 z-40">
-        <VoiceAgent
-          pollaPubkey={pollaPubkey?.toBase58()}
-          onVoiceSubmitPicks={handleVoiceSubmit}
-          onVoiceJoinPool={handleVoiceJoin}
-          onOpenPool={async (poolId: string) => {
-            try {
-              new PublicKey(poolId);
-              window.location.assign(`/pollas/${poolId}`);
-              return { navigated: true };
-            } catch (e) {
-              return { navigated: false, error: (e as Error).message };
-            }
-          }}
-          onGoToPage={async (page: string) => {
-            const path = resolvePagePath(page);
-            if (!path)
-              return { navigated: false, error: `Unknown page: ${page}` };
-            window.location.assign(path);
-            return { navigated: true };
-          }}
-        />
-      </div>
+      {/* Voice agent now mounted persistently in providers (see PersistentVoiceAgent) */}
 
       {/* Confirmation modal triggered by the voice agent's submit_picks tool */}
       <PicksConfirmModal

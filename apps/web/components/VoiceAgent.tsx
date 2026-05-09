@@ -88,8 +88,8 @@ export function VoiceAgent({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const accounts = await (program.account as any).polla.all();
     const configuredMint = new PublicKey(USDC_MINT);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return accounts
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .filter(({ account }: { account: any }) =>
         account.usdcMint.equals(configuredMint),
       )
