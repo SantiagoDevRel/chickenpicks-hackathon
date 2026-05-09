@@ -1,17 +1,20 @@
 // Login / landing screen. Mirrors apps/web/app/page.tsx hero — same
 // chicken hero image, same gold/amber/turf wordmark, but adapted for RN.
+import { useState } from 'react';
 import { Pressable, Text, View, ScrollView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWallet } from '@/lib/useWallet';
 import { ConnectButton } from '@/components/ConnectButton';
+import { VoiceCoachModal } from '@/components/VoiceCoachModal';
 
 const heroChicken = require('../assets/pollitos/pollito_capitan_lider.webp');
 
 export default function LoginScreen() {
   const router = useRouter();
   const { wallet, ready } = useWallet();
+  const [coachVisible, setCoachVisible] = useState(false);
 
   return (
     <SafeAreaView className="flex-1 bg-bg-base">
@@ -72,6 +75,14 @@ export default function LoginScreen() {
                 </Text>
               </Pressable>
               <Pressable
+                onPress={() => setCoachVisible(true)}
+                className="rounded-md border border-amber/50 bg-bg-card px-6 py-3"
+              >
+                <Text className="font-display text-xs tracking-widest text-amber">
+                  🎙  TALK TO COACH
+                </Text>
+              </Pressable>
+              <Pressable
                 onPress={() => router.push('/profile')}
                 className="rounded-md border border-border-default bg-bg-card px-6 py-3"
               >
@@ -82,6 +93,7 @@ export default function LoginScreen() {
             </View>
           )}
         </View>
+        <VoiceCoachModal visible={coachVisible} onClose={() => setCoachVisible(false)} />
 
         <View className="px-6 py-6 border-t border-border-subtle">
           <Text className="font-display text-[11px] tracking-widest text-text-muted text-center">
