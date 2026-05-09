@@ -756,6 +756,15 @@ export default function PollaDetailPage() {
           pollaPubkey={pollaPubkey?.toBase58()}
           onVoiceSubmitPicks={handleVoiceSubmit}
           onVoiceJoinPool={handleVoiceJoin}
+          onOpenPool={async (poolId: string) => {
+            try {
+              new PublicKey(poolId);
+              window.location.assign(`/pollas/${poolId}`);
+              return { navigated: true };
+            } catch (e) {
+              return { navigated: false, error: (e as Error).message };
+            }
+          }}
         />
       </div>
 

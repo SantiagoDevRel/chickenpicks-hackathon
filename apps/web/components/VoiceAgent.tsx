@@ -55,6 +55,7 @@ export function VoiceAgent({
   pollaPubkey,
   onVoiceSubmitPicks,
   onVoiceJoinPool,
+  onOpenPool,
 }: {
   pollaPubkey?: string;
   onVoiceSubmitPicks?: (
@@ -68,6 +69,7 @@ export function VoiceAgent({
     sig?: string;
     error?: string;
   }>;
+  onOpenPool?: (poolId: string) => Promise<{ navigated: boolean; error?: string }>;
 }) {
   const { wallets } = useSolanaWallets();
   const wallet = wallets[0];
@@ -107,6 +109,30 @@ export function VoiceAgent({
   // tool's return value against the strict signature.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clientTools: any = {
+      // ─── open_pool: navigate to a pool's detail page ──────────────────
+      // Triggered when the user picks a pool from list_pools or names it
+      // ("open WC2026 Voice Demo"). The agent passes the pool's pubkey
+      // (from list_pools output) and the page routes via Next.js router.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      open_pool: async (params: any) => {
+        const id = (params?.pool_id ?? params?.id ?? '').toString();
+        if (!id) {
+          return { error: 'No pool_id provided. Call list_pools first.' };
+        }
+        if (!onOpenPool) {
+          return { error: 'Navigation not available on this page.' };
+        }
+        const result = await onOpenPool(id);
+        if (result.navigated) {
+          return {
+            status: 'navigated',
+            message:
+              'Browser is now on the pool detail page. The user can see the matches and pay.',
+          };
+        }
+        return { status: 'error', error: result.error ?? 'Navigation failed.' };
+      },
+
       // ─── get_current_pool: tells the agent which pool the user is on ───
       get_current_pool: async () => {
         if (!pollaPubkey) {
