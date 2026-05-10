@@ -341,7 +341,7 @@ export default function CrearPollaPage() {
   // --- Render --------------------------------------------------------------
 
   return (
-    <main className="min-h-screen pb-28">
+    <main className="min-h-screen pb-48">
       <BrandHeader />
 
       <div className="mx-auto max-w-md md:max-w-2xl px-4 pt-6">

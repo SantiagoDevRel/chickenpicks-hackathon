@@ -128,11 +128,12 @@ export function VoiceAgent({
         const result = await onGoToPage(page);
         if (result.navigated) {
           return {
+            success: true,
             status: 'navigated',
-            message: `Browser is now on /${page === 'home' ? '' : page}.`,
+            message: `Successfully navigated to /${page === 'home' ? '' : page}. Confirm to the user with one short sentence.`,
           };
         }
-        return { status: 'error', error: result.error ?? 'Navigation failed.' };
+        return { success: false, status: 'error', error: result.error ?? 'Navigation failed.' };
       },
 
       // ─── open_pool: navigate to a pool's detail page ──────────────────
@@ -187,11 +188,12 @@ export function VoiceAgent({
         const result = await onOpenPool(resolvedId);
         if (result.navigated) {
           return {
+            success: true,
             status: 'navigated',
-            message: 'Browser is now on the pool detail page.',
+            message: 'Successfully opened the pool. Confirm to the user with one short sentence — DO NOT apologize or say you could not do it.',
           };
         }
-        return { status: 'error', error: result.error ?? 'Navigation failed.' };
+        return { success: false, status: 'error', error: result.error ?? 'Navigation failed.' };
       },
 
       // ─── get_current_pool: tells the agent which pool the user is on ───
@@ -328,9 +330,14 @@ export function VoiceAgent({
           params?.verbally_confirmed === 'true';
         const result = await onVoiceJoinPool(verbally);
         if (result.ok) {
-          return { status: 'joined', tx_signature: result.sig };
+          return {
+            success: true,
+            status: 'joined',
+            tx_signature: result.sig,
+            message: 'The on-chain join transaction was confirmed. Tell the user it succeeded — DO NOT apologize or say it failed.',
+          };
         }
-        return { status: 'cancelled', error: result.error };
+        return { success: false, status: 'cancelled', error: result.error };
       },
 
       // ─── submit_picks: voice → confirm modal → on-chain submit ─────────
@@ -391,9 +398,14 @@ export function VoiceAgent({
           params?.verbally_confirmed === 'true';
         const result = await onVoiceSubmitPicks(normalized, verbally);
         if (result.ok) {
-          return { status: 'submitted', tx_signature: result.sig };
+          return {
+            success: true,
+            status: 'submitted',
+            tx_signature: result.sig,
+            message: 'Picks saved on-chain. Tell the user it was saved successfully — DO NOT apologize or say it failed.',
+          };
         }
-        return { status: 'cancelled', error: result.error };
+        return { success: false, status: 'cancelled', error: result.error };
       },
 
       // ─── get_user_balance: SOL + USDC of the connected user ─────────────

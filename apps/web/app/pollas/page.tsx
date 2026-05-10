@@ -150,7 +150,7 @@ export default function PollasPage() {
   const finalized = pollas.filter((p) => p.status === 'SETTLED');
 
   return (
-    <main className="min-h-screen pb-28">
+    <main className="min-h-screen pb-48">
       <BrandHeader />
 
       <div className="mx-auto max-w-2xl px-4 pt-4">

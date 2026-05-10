@@ -736,7 +736,7 @@ export default function PollaDetailPage() {
 
   if (!pollaPubkey) {
     return (
-      <main className="min-h-screen">
+      <main className="min-h-screen pb-48">
         <BrandHeader />
         <div className="mx-auto max-w-3xl px-4 py-10 text-center">
           <p className="text-red-alert">Invalid polla address.</p>
@@ -746,7 +746,7 @@ export default function PollaDetailPage() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen pb-48">
       <BrandHeader />
 
       {/* Voice agent now mounted persistently in providers (see PersistentVoiceAgent) */}
@@ -881,11 +881,18 @@ export default function PollaDetailPage() {
                   <>
                     {!prediction && statusKey(polla.status) === 'OPEN' && (
                       <button
-                        onClick={joinAndPredict}
-                        disabled={busy}
+                        onClick={() =>
+                          setJoinConfirmState({
+                            kind: 'open',
+                            poolName: decodeFixedString(polla.name),
+                            tournament: decodeFixedString(polla.tournament),
+                            entryUsdc: formatUsdc(polla.entryAmount),
+                          })
+                        }
+                        disabled={busy || joinConfirmState.kind === 'busy'}
                         className="w-full rounded-md bg-gold px-5 py-3 font-display tracking-[0.08em] text-sm text-black hover:bg-amber disabled:opacity-50 transition"
                       >
-                        {busy
+                        {joinConfirmState.kind === 'busy'
                           ? 'JOINING…'
                           : `JOIN POOL (${formatUsdc(polla.entryAmount)} USDC)`}
                       </button>
