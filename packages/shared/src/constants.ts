@@ -12,11 +12,22 @@ export const PROGRAM_ID =
   process.env.NEXT_PUBLIC_PROGRAM_ID ?? 'Cdd53o33BTaZcmpZ55TemGPmZRR2mbMiYDEU6Mecb3ut';
 
 // USDC mint addresses
-export const USDC_MINT_DEVNET = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr'; // Circle devnet
-export const USDC_MINT_MAINNET = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'; // Circle mainnet
+//
+// We default to the project's TEST USDC mint (sWjZ…) because every demo
+// polla, every claim, and every fake-user seeding uses that mint. Setting
+// the default to Circle devnet (Gh9Z…) caused a bug where the voice
+// agent's get_user_balance read the wrong ATA and reported 0 USDC even
+// after a successful claim of 19.95 USDC. NEXT_PUBLIC_USDC_MINT can
+// still override (e.g. to switch to mainnet Circle USDC for production).
+export const USDC_MINT_TEST_DEVNET = 'sWjZfTkMM2zbNBx1YwgYGmsXfZpA1yo5HkhSqB9AUXC';
+export const USDC_MINT_CIRCLE_DEVNET = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr';
+export const USDC_MINT_MAINNET = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+// Back-compat alias — older code imported USDC_MINT_DEVNET directly.
+export const USDC_MINT_DEVNET = USDC_MINT_TEST_DEVNET;
 
 export const USDC_MINT =
-  process.env.NEXT_PUBLIC_USDC_MINT ?? USDC_MINT_DEVNET;
+  process.env.NEXT_PUBLIC_USDC_MINT ?? USDC_MINT_TEST_DEVNET;
 
 export const USDC_DECIMALS = 6;
 export const SOL_DECIMALS = 9;
