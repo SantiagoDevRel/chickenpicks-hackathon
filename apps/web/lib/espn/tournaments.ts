@@ -90,3 +90,13 @@ export const TOURNAMENTS: readonly Tournament[] = [
 export function getTournament(id: string): Tournament | undefined {
   return TOURNAMENTS.find((t) => t.id === id);
 }
+
+/**
+ * Look up a tournament by its display name. Used by pool cards because the
+ * Anchor program stores `tournament` as a 32-byte name (not the slug/id),
+ * so cards rendered from on-chain data need a name → logo reverse lookup.
+ */
+export function getTournamentByName(name: string): Tournament | undefined {
+  const n = name.trim().toLowerCase();
+  return TOURNAMENTS.find((t) => t.name.toLowerCase() === n);
+}

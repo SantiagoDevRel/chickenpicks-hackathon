@@ -23,6 +23,7 @@ import {
 } from '@chickenpicks/shared';
 import { BrandHeader } from '@/components/BrandHeader';
 import { POLLITOS, pollitoImage } from '@/lib/usePollito';
+import { getTournamentByName } from '@/lib/espn/tournaments';
 
 type RawPolla = {
   creator: PublicKey;
@@ -284,6 +285,7 @@ function PollaListCard({
   // the hackathon we deterministically pick `min(numParticipants, 4)` from
   // the catalog seeded by the polla pubkey — visual variety, no collisions.
   const avatars = pickAvatars(polla.pubkey, polla.numParticipants);
+  const tournament = getTournamentByName(polla.tournament);
 
   return (
     <Link
@@ -292,23 +294,33 @@ function PollaListCard({
         dimmed ? 'opacity-70' : ''
       }`}
     >
-      <div className="flex items-start justify-between gap-3 mb-3">
+      <div className="flex items-start justify-between gap-3 mb-2">
         <div className="min-w-0 flex-1">
-          <div className="font-display tracking-[0.02em] text-xl text-text-primary uppercase truncate leading-tight">
-            {polla.name}
+          <div className="flex items-center gap-2.5 min-w-0">
+            {tournament?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={tournament.logoUrl}
+                alt={polla.tournament}
+                width={28}
+                height={28}
+                className="flex-shrink-0"
+              />
+            ) : (
+              <span aria-label={polla.tournament} className="text-2xl leading-none">
+                {tournament?.emoji ?? '⚽'}
+              </span>
+            )}
+            <div className="font-display tracking-[0.02em] text-xl text-text-primary uppercase truncate leading-tight">
+              {polla.name}
+            </div>
           </div>
-          <div className="text-xs text-text-muted truncate mt-0.5">
-            {polla.tournament}
-          </div>
-          <div className="mt-1.5 flex items-center gap-2 text-sm text-text-secondary">
-            <span className="text-text-muted">
-              <span className="text-text-secondary">{polla.numParticipants}</span>{' '}
-              ·
-            </span>
-            <span>${polla.entryUsdc} each</span>
-            <span className="text-text-muted">·</span>
+          <div className="mt-2 text-sm text-text-secondary">
+            Entry ${polla.entryUsdc}{' '}
+            <span className="text-text-muted/60">·</span>{' '}
+            Pot{' '}
             <span className="font-display tracking-[0.04em] text-gold">
-              POT ${polla.totalPoolUsdc}
+              ${polla.totalPoolUsdc}
             </span>
           </div>
         </div>
@@ -329,8 +341,8 @@ function PollaListCard({
         </div>
       </div>
 
-      {/* Footer: status badge + matches progress */}
-      <div className="flex items-center justify-between border-t border-border-subtle pt-2.5">
+      {/* Status pill — minimal footer */}
+      <div className="flex justify-end">
         <span
           className={`font-display tracking-[0.08em] text-xs uppercase ${
             polla.status === 'OPEN'
@@ -341,9 +353,6 @@ function PollaListCard({
           }`}
         >
           ● {polla.status}
-        </span>
-        <span className="font-display tracking-[0.04em] text-xs text-text-muted uppercase">
-          {polla.matchesSettled} of {polla.numMatches} matches
         </span>
       </div>
     </Link>

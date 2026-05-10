@@ -16,7 +16,10 @@ import { TOURNAMENTS } from '@/lib/espn/tournaments';
 
 export const dynamic = 'force-dynamic';
 
-const MAX_RANGE_DAYS = 60;
+// 90 gives the /crear wizard headroom — it paginates in 60-day windows but
+// the inclusive-endpoint count makes those windows 61 days each, which used
+// to fail validation. ESPN handles ~90-day spans without complaint.
+const MAX_RANGE_DAYS = 90;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const VALID_SLUGS = new Set(TOURNAMENTS.map((t) => t.leagueSlug));

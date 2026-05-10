@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { BrandHeader } from '@/components/BrandHeader';
 import { pollitoImage, usePollito } from '@/lib/usePollito';
+import { getTournamentByName } from '@/lib/espn/tournaments';
 
 type Pool = {
   pubkey: string;
@@ -118,8 +119,8 @@ export default function InicioPage() {
       <BrandHeader />
 
       <div className="mx-auto max-w-2xl px-4 pt-4">
-        {/* Hero with pollito + greeting (flat, no card shell — la-polla style) */}
-        <section className="mb-4 flex items-center gap-4">
+        {/* Hero — minimal greeting, two text lines max */}
+        <section className="mb-5 flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={pollitoImage(pollito, 'lider')}
@@ -129,14 +130,11 @@ export default function InicioPage() {
             className="flex-shrink-0 drop-shadow-[0_8px_28px_rgba(255,215,0,0.25)]"
           />
           <div className="min-w-0">
-            <div className="font-display tracking-[0.08em] text-xs text-text-muted uppercase">
-              {pollito.label}
-            </div>
             <div className="font-display tracking-[0.02em] text-[32px] text-gold uppercase leading-none truncate">
               Hi, {handle}
             </div>
-            <div className="mt-1 text-sm text-text-muted">
-              {pollito.vibe}
+            <div className="mt-1.5 font-display tracking-[0.08em] text-xs text-text-muted uppercase">
+              {pollito.label}
             </div>
           </div>
         </section>
@@ -241,27 +239,42 @@ function SectionHeading({
 }
 
 function PoolPreview({ pool }: { pool: Pool }) {
+  const tournament = getTournamentByName(pool.tournament);
   return (
     <Link
       href={`/pollas/${pool.pubkey}`}
       className="lp-card p-4 flex items-center justify-between hover:border-border-strong transition"
     >
-      <div className="min-w-0">
-        <div className="font-display tracking-[0.04em] text-xl text-text-primary uppercase truncate">
-          {pool.name}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {tournament?.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={tournament.logoUrl}
+              alt={pool.tournament}
+              width={24}
+              height={24}
+              className="flex-shrink-0"
+            />
+          ) : (
+            <span aria-label={pool.tournament} className="text-xl leading-none">
+              {tournament?.emoji ?? '⚽'}
+            </span>
+          )}
+          <div className="font-display tracking-[0.04em] text-xl text-text-primary uppercase truncate">
+            {pool.name}
+          </div>
         </div>
-        <div className="text-xs text-text-muted truncate">
-          {pool.tournament}
-        </div>
-        <div className="mt-1 flex items-center gap-2 text-xs text-text-muted">
-          <span>${pool.entryUsdc} each</span>
-          <span>·</span>
-          <span className="text-gold font-display tracking-[0.06em]">
-            POT ${pool.totalPoolUsdc}
+        <div className="mt-1.5 text-sm text-text-muted">
+          Entry ${pool.entryUsdc}{' '}
+          <span className="text-text-muted/60">·</span>{' '}
+          Pot{' '}
+          <span className="text-gold font-display tracking-[0.04em]">
+            ${pool.totalPoolUsdc}
           </span>
         </div>
       </div>
-      <div className="text-right ml-3">
+      <div className="ml-3">
         <div
           className={`font-display tracking-[0.08em] text-xs ${
             pool.status === 'OPEN'
@@ -271,13 +284,7 @@ function PoolPreview({ pool }: { pool: Pool }) {
                 : 'text-text-muted'
           }`}
         >
-          {pool.status}
-        </div>
-        <div className="font-display tracking-[0.04em] text-xl text-text-primary leading-none mt-0.5">
-          {pool.numParticipants}
-        </div>
-        <div className="font-display tracking-[0.06em] text-[11px] text-text-muted">
-          PLAYERS
+          ● {pool.status}
         </div>
       </div>
     </Link>
