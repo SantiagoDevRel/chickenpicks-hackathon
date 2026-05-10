@@ -57,4 +57,7 @@ export const HIDDEN_POLLAS = new Set<string>([
   // name slot was taken by this one — they'll re-create with a slightly
   // different name like "Pool with Solana Friends 2").
   '4QXakqYxDKmaAD25HDCNk5iUJ4wYvUXkoe3WNgHb44ZA',
+  // 2026-05-09: superseded — user created another fresh "Pool with SOL
+  // friends" and is about to re-record again.
+  'GW4S5Br9cKPii859Ypw6vAW6qciTwURLi41wBqzvCcTe',
 ]);
