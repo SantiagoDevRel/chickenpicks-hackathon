@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useConversation } from '@elevenlabs/react';
 import { useSolanaWallets } from '@privy-io/react-auth/solana';
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
@@ -472,6 +472,36 @@ export function VoiceAgent({
       ),
     clientTools,
   });
+
+  // When the user navigates between pools mid-conversation, dynamicVariables
+  // set at startSession() are stale — the agent still thinks the user is on
+  // the previous pool (or no pool). ElevenLabs Conv AI exposes
+  // `sendContextualUpdate(text)` to push background context without
+  // speaking. We fire it whenever pollaPubkey changes AND the conversation
+  // is connected, so subsequent "update mexico 2 south africa 1"-style
+  // commands resolve to the current pool without the agent re-asking.
+  const lastSentContextRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (conversation.status !== 'connected') return;
+    const ctx = pollaPubkey
+      ? `The user just navigated to pool ${pollaPubkey}. Use this as current_pool_id for ALL submit_picks, join_pool, get_pool_details and update_pick calls — DO NOT ask which pool. Call get_pool_details(pool_id="${pollaPubkey}") if you need the matches list to map team names to indices.`
+      : 'The user navigated away from a pool detail page. There is no current pool right now.';
+    if (lastSentContextRef.current === ctx) return;
+    lastSentContextRef.current = ctx;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const conv = conversation as any;
+      if (typeof conv.sendContextualUpdate === 'function') {
+        conv.sendContextualUpdate(ctx);
+      } else if (typeof conv.sendUserActivity === 'function') {
+        // Older SDK fallback — surfaces as a non-spoken activity.
+        conv.sendUserActivity({ type: 'context', text: ctx });
+      }
+    } catch {
+      // Non-fatal — agent will fall back to get_current_pool tool if it
+      // doesn't get the update.
+    }
+  }, [conversation, conversation.status, pollaPubkey]);
 
   async function start() {
     setError(null);

@@ -53,4 +53,8 @@ export const HIDDEN_POLLAS = new Set<string>([
   // 2026-05-09: user ran out of SOL mid add_match loop (66/104 added);
   // unsettleable because num_matches=104 != actual match accounts.
   'FpYgD5XwMMpjKvZEcbwTPnUKeYfgpkZ3CppNZtjee6nq',
+  // 2026-05-09: user wants to re-record demo with a fresh polla (same
+  // name slot was taken by this one — they'll re-create with a slightly
+  // different name like "Pool with Solana Friends 2").
+  '4QXakqYxDKmaAD25HDCNk5iUJ4wYvUXkoe3WNgHb44ZA',
 ]);
