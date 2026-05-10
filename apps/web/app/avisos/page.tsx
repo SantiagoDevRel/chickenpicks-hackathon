@@ -64,27 +64,27 @@ export default function AvisosPage() {
   }
 
   return (
-    <main className="min-h-screen pb-24 md:pb-12">
+    <main className="min-h-screen pb-20">
       <BrandHeader />
 
       <div className="mx-auto max-w-2xl px-4 pt-4">
         <div className="flex items-baseline justify-between mb-4">
-          <h1 className="font-display tracking-[0.04em] text-[28px] md:text-3xl text-text-primary uppercase">
-            Avisos
+          <h1 className="font-display tracking-[0.04em] text-2xl md:text-3xl text-text-primary uppercase">
+            Alerts
           </h1>
           <button
             type="button"
             onClick={markAllRead}
-            className="font-display tracking-[0.08em] text-[11px] text-text-muted hover:text-text-primary uppercase transition"
+            className="font-display tracking-[0.08em] text-xs text-text-muted hover:text-text-primary uppercase transition"
           >
-            ✓ Leer todas
+            ✓ Mark all read
           </button>
         </div>
 
         {loading && (
-          <div className="lp-card p-12 text-center">
+          <div className="lp-card p-8 text-center">
             <div className="font-display tracking-[0.08em] text-sm text-text-muted">
-              CARGANDO…
+              LOADING…
             </div>
           </div>
         )}
@@ -105,11 +105,11 @@ export default function AvisosPage() {
               height={100}
               className="mx-auto mb-4 opacity-90"
             />
-            <p className="font-display tracking-[0.04em] text-lg text-text-primary mb-1 uppercase">
-              Sin avisos
+            <p className="font-display tracking-[0.04em] text-xl text-text-primary mb-1 uppercase">
+              No alerts
             </p>
-            <p className="text-sm text-text-muted">
-              Cuando suceda algo en tus pollas aparecerá aquí.
+            <p className="text-base text-text-muted">
+              When something happens in your pools, it will show up here.
             </p>
           </div>
         )}
@@ -146,14 +146,14 @@ function AvisoRow({ aviso, isLast }: { aviso: Aviso; isLast: boolean }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
-          <div className="font-display tracking-[0.02em] text-[14px] text-text-primary truncate">
+          <div className="font-display tracking-[0.02em] text-sm text-text-primary truncate">
             {aviso.title}
           </div>
-          <div className="font-display tracking-[0.06em] text-[10px] text-text-muted whitespace-nowrap uppercase">
+          <div className="font-display tracking-[0.06em] text-xs text-text-muted whitespace-nowrap uppercase">
             {relative}
           </div>
         </div>
-        <div className="text-[11px] text-text-muted truncate mt-0.5">
+        <div className="text-xs text-text-muted truncate mt-0.5">
           {aviso.subtitle}
         </div>
       </div>
@@ -174,11 +174,11 @@ function useRelative(iso: string): string {
     const then = new Date(iso).getTime();
     const diffMs = Date.now() - then;
     const min = Math.max(1, Math.round(diffMs / 60000));
-    if (min < 60) return `hace ${min} min`;
+    if (min < 60) return `${min} min ago`;
     const hr = Math.round(min / 60);
-    if (hr < 24) return `hace ${hr} h`;
+    if (hr < 24) return `${hr} h ago`;
     const d = Math.round(hr / 24);
-    return `hace ${d} d`;
+    return `${d} d ago`;
   }, [iso]);
 }
 

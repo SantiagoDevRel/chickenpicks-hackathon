@@ -7,15 +7,15 @@ export default function LandingPage() {
       <BrandHeader />
 
       {/* Hero */}
-      <section className="mx-auto max-w-5xl px-4 pt-12 pb-16 md:pt-20 md:pb-24">
+      <section className="mx-auto max-w-5xl px-4 pt-6 pb-12 md:pt-12 md:pb-16">
         <div className="flex flex-col items-center text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/pollitos/pollito_capitan_lider.webp"
             alt=""
-            width={140}
-            height={140}
-            className="mb-6 drop-shadow-[0_8px_28px_rgba(255,215,0,0.25)]"
+            width={96}
+            height={96}
+            className="mb-4 drop-shadow-[0_8px_28px_rgba(255,215,0,0.25)]"
           />
 
           <h1
@@ -35,10 +35,10 @@ export default function LandingPage() {
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/pollas"
+              href="/inicio"
               className="rounded-md bg-gold px-6 py-3 font-display tracking-[0.08em] text-sm text-black hover:bg-amber transition"
             >
-              BROWSE POLLAS →
+              ENTER APP →
             </Link>
             <a
               href="https://github.com/SantiagoDevRel/chickenpicks-hackathon"

@@ -22,11 +22,11 @@ type Tab = {
 };
 
 const TABS: Tab[] = [
-  { href: '/inicio', label: 'Inicio', icon: 'home' },
-  { href: '/pollas', label: 'Pollas', icon: 'pollas' },
+  { href: '/inicio', label: 'Home', icon: 'home' },
+  { href: '/pollas', label: 'Pools', icon: 'pollas' },
   { href: '/crear', label: '', icon: 'plus' },
-  { href: '/avisos', label: 'Avisos', icon: 'avisos', hasNotification: true },
-  { href: '/perfil', label: 'Perfil', icon: 'perfil' },
+  { href: '/avisos', label: 'Alerts', icon: 'avisos', hasNotification: true },
+  { href: '/perfil', label: 'Profile', icon: 'perfil' },
 ];
 
 export function BottomNav() {
@@ -43,7 +43,7 @@ export function BottomNav() {
       aria-label="Primary"
       className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-default bg-bg-base/95 backdrop-blur-md safe-bottom md:static md:border-t-0 md:border-b md:bg-transparent md:backdrop-blur-none"
     >
-      <div className="mx-auto flex max-w-2xl items-stretch justify-around gap-1 px-2 py-1.5 md:max-w-5xl md:justify-center md:gap-6 md:py-2">
+      <div className="mx-auto flex max-w-2xl items-stretch justify-around gap-1 px-3 py-2 md:max-w-5xl md:justify-center md:gap-6">
         {TABS.map((tab) => {
           const isActive =
             tab.href === '/inicio'
@@ -69,7 +69,7 @@ function NavTab({ tab, isActive }: { tab: Tab; isActive: boolean }) {
     return (
       <Link
         href={tab.href}
-        aria-label="Create new polla"
+        aria-label="Create new pool"
         className="relative flex flex-1 items-center justify-center md:flex-none"
       >
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gold text-black shadow-[0_8px_24px_-4px_rgba(255,215,0,0.45)] ring-4 ring-bg-base transition hover:bg-amber md:h-11 md:w-11 md:ring-0">
@@ -95,7 +95,7 @@ function NavTab({ tab, isActive }: { tab: Tab; isActive: boolean }) {
         )}
       </span>
       <span
-        className={`font-display text-[10px] tracking-[0.08em] md:text-[12px] ${
+        className={`font-display text-xs tracking-[0.06em] md:text-sm ${
           isActive ? 'text-gold' : ''
         }`}
       >

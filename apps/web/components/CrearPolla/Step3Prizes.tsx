@@ -80,23 +80,22 @@ export function Step3Prizes({
 
   return (
     <div className="space-y-6">
-      {/* Pago al final — informational copy, mirrors la-polla */}
+      {/* Payout at settlement — informational copy */}
       <section className="lp-card p-5 sm:p-6">
-        <h2 className="lp-section-title mb-3">Pago al final</h2>
+        <h2 className="lp-section-title mb-3">Payout</h2>
         <p className="text-sm text-text-secondary leading-relaxed">
-          Al terminar la polla, los premios se reparten on-chain a los ganadores
-          según los porcentajes de abajo. La plataforma cobra un{' '}
-          <span className="text-gold">5% de fee</span> automático sobre el pozo
-          al momento del settle.
+          When the pool settles, prizes are distributed on-chain to winners
+          based on the percentages below. The platform takes an automatic{' '}
+          <span className="text-gold">5% fee</span> on the pot at settle time.
         </p>
       </section>
 
       {/* Entry amount */}
       <section className="lp-card p-5 sm:p-6">
-        <h2 className="lp-section-title mb-3">Costo de entrada</h2>
+        <h2 className="lp-section-title mb-3">Entry cost</h2>
         <label className="block">
           <span className="font-display tracking-[0.04em] text-xs text-text-secondary">
-            Monto en USDC <span className="text-red-alert">*</span>
+            Amount in USDC <span className="text-red-alert">*</span>
           </span>
           <div className="mt-2 flex items-center gap-2">
             <input
@@ -118,10 +117,10 @@ export function Step3Prizes({
         </label>
       </section>
 
-      {/* Premios */}
+      {/* Prize tiers */}
       <section className="lp-card p-5 sm:p-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="lp-section-title">Premios</h2>
+          <h2 className="lp-section-title">Prizes</h2>
           <span
             className={`font-display tracking-[0.08em] text-xs ${
               exact ? 'text-turf' : over ? 'text-red-alert' : 'text-amber'
@@ -129,10 +128,10 @@ export function Step3Prizes({
           >
             {total}%
             {!exact && (
-              <span className="ml-2 text-text-muted normal-case font-sans tracking-normal text-[10px]">
+              <span className="ml-2 text-text-muted normal-case font-sans tracking-normal text-xs">
                 {over
-                  ? `Pasaste por ${total - 100}%`
-                  : `Faltan ${remaining}% para 100%`}
+                  ? `${total - 100}% over`
+                  : `${remaining}% to reach 100%`}
               </span>
             )}
           </span>
@@ -163,7 +162,7 @@ export function Step3Prizes({
                 <button
                   type="button"
                   onClick={() => removeTier(i)}
-                  aria-label={`Quitar tier ${i + 1}`}
+                  aria-label={`Remove tier ${i + 1}`}
                   className="ml-1 text-text-muted hover:text-red-alert transition w-7 h-7 flex items-center justify-center"
                 >
                   ×
@@ -179,13 +178,13 @@ export function Step3Prizes({
             onClick={addTier}
             className="mt-3 w-full rounded-md border border-dashed border-border-default bg-bg-base/20 px-3 py-2.5 font-display tracking-[0.08em] text-xs text-gold hover:border-gold/60 hover:bg-gold/5 transition"
           >
-            + CREAR OTRO GANADOR
+            + ADD ANOTHER WINNER
           </button>
         )}
 
         <div className="mt-4 pt-3 border-t border-border-subtle flex items-center justify-between">
-          <span className="font-display tracking-[0.08em] text-[11px] text-text-muted">
-            SUMA TOTAL
+          <span className="font-display tracking-[0.08em] text-xs text-text-muted">
+            TOTAL
           </span>
           <span
             className={`font-display tracking-[0.04em] text-base ${
@@ -206,7 +205,7 @@ export function Step3Prizes({
       {txSig && (
         <div className="rounded-md border border-turf/30 bg-turf/10 px-3 py-3">
           <p className="text-xs text-turf font-display tracking-[0.04em]">
-            ✓ POLLA CREADA. Tx:{' '}
+            ✓ POOL CREATED. Tx:{' '}
             <a
               href={`https://explorer.solana.com/tx/${txSig}?cluster=devnet`}
               target="_blank"
@@ -225,9 +224,9 @@ export function Step3Prizes({
           type="button"
           onClick={onCancel}
           disabled={busy}
-          className="rounded-md border border-border-default bg-bg-card/50 px-3 py-3 font-display tracking-[0.08em] text-[11px] text-text-muted hover:text-text-primary hover:border-border-strong disabled:opacity-50 transition"
+          className="rounded-md border border-border-default bg-bg-card/50 px-3 py-3 font-display tracking-[0.08em] text-xs text-text-muted hover:text-text-primary hover:border-border-strong disabled:opacity-50 transition"
         >
-          Cancelar
+          Cancel
         </button>
         <div className="flex items-center gap-2">
           <button
@@ -236,7 +235,7 @@ export function Step3Prizes({
             disabled={busy}
             className="rounded-md border border-border-default bg-bg-card/50 px-4 py-3 font-display tracking-[0.08em] text-xs text-text-muted hover:text-text-primary hover:border-border-strong disabled:opacity-50 transition"
           >
-            ← Atrás
+            ← Back
           </button>
           <button
             type="button"
@@ -244,7 +243,7 @@ export function Step3Prizes({
             disabled={!canSubmit}
             className="rounded-md bg-gold px-5 py-3 font-display tracking-[0.08em] text-xs text-black hover:bg-amber disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            {busy ? 'CREANDO…' : 'Crear polla'}
+            {busy ? 'CREATING…' : 'Create pool'}
           </button>
         </div>
       </div>

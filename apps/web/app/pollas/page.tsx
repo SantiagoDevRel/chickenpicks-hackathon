@@ -147,12 +147,12 @@ export default function PollasPage() {
   const finalized = pollas.filter((p) => p.status === 'SETTLED');
 
   return (
-    <main className="min-h-screen pb-24 md:pb-12">
+    <main className="min-h-screen pb-20">
       <BrandHeader />
 
       <div className="mx-auto max-w-2xl px-4 pt-4">
-        <h1 className="font-display tracking-[0.04em] text-[28px] md:text-3xl text-text-primary uppercase mb-3">
-          Mis pollas
+        <h1 className="font-display tracking-[0.04em] text-2xl md:text-3xl text-text-primary uppercase mb-3">
+          My pools
         </h1>
 
         {/* Code-entry pill (la-polla pattern). Placeholder for invite-code feature. */}
@@ -164,8 +164,8 @@ export default function PollasPage() {
           <span className="flex h-9 w-9 items-center justify-center rounded-md bg-bg-elevated/60 flex-shrink-0">
             <LinkIcon />
           </span>
-          <span className="font-display tracking-[0.04em] text-[13px] text-text-secondary uppercase">
-            ¿Tienes un código? <span className="text-gold">Únete</span>
+          <span className="font-display tracking-[0.04em] text-sm text-text-secondary uppercase">
+            Have a code? <span className="text-gold">Join</span>
           </span>
         </button>
 
@@ -205,15 +205,15 @@ export default function PollasPage() {
 
         {!loading && !error && pollas.length > 0 && (
           <>
-            {/* MIS POLLAS ACTIVAS · N */}
+            {/* My active pools · N */}
             <Section
-              label={`Mis pollas activas · ${active.length}`}
+              label={`My active pools · ${active.length}`}
               tone="gold"
             >
               {active.length === 0 && (
                 <div className="lp-card p-6 text-center">
-                  <p className="text-text-muted text-sm">
-                    Sin pollas activas por ahora.
+                  <p className="text-text-muted text-base">
+                    No active pools yet.
                   </p>
                 </div>
               )}
@@ -224,10 +224,10 @@ export default function PollasPage() {
               </div>
             </Section>
 
-            {/* Finalizadas · N */}
+            {/* Finished · N */}
             {finalized.length > 0 && (
               <Section
-                label={`Finalizadas · ${finalized.length}`}
+                label={`Finished · ${finalized.length}`}
                 tone="muted"
                 className="mt-6"
               >
@@ -260,11 +260,11 @@ function Section({
     <section className={className}>
       <div className="flex items-center gap-2 mb-2.5 px-1">
         <span
-          className={`font-display tracking-[0.08em] text-[12px] uppercase ${
+          className={`lp-section-title ${
             tone === 'gold' ? 'text-gold' : 'text-text-muted'
           }`}
         >
-          ▸ {label}
+          {label}
         </span>
       </div>
       {children}
@@ -294,21 +294,21 @@ function PollaListCard({
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0 flex-1">
-          <div className="font-display tracking-[0.02em] text-[20px] text-text-primary uppercase truncate leading-tight">
+          <div className="font-display tracking-[0.02em] text-xl text-text-primary uppercase truncate leading-tight">
             {polla.name}
           </div>
-          <div className="text-[11px] text-text-muted truncate mt-0.5">
+          <div className="text-xs text-text-muted truncate mt-0.5">
             {polla.tournament}
           </div>
-          <div className="mt-1.5 flex items-center gap-2 text-[12px] text-text-secondary">
+          <div className="mt-1.5 flex items-center gap-2 text-sm text-text-secondary">
             <span className="text-text-muted">
               <span className="text-text-secondary">{polla.numParticipants}</span>{' '}
               ·
             </span>
-            <span>${polla.entryUsdc} c/u</span>
+            <span>${polla.entryUsdc} each</span>
             <span className="text-text-muted">·</span>
             <span className="font-display tracking-[0.04em] text-gold">
-              POZO ${polla.totalPoolUsdc}
+              POT ${polla.totalPoolUsdc}
             </span>
           </div>
         </div>
@@ -332,7 +332,7 @@ function PollaListCard({
       {/* Footer: status badge + matches progress */}
       <div className="flex items-center justify-between border-t border-border-subtle pt-2.5">
         <span
-          className={`font-display tracking-[0.08em] text-[10px] uppercase ${
+          className={`font-display tracking-[0.08em] text-xs uppercase ${
             polla.status === 'OPEN'
               ? 'text-turf'
               : polla.status === 'LOCKED'
@@ -340,10 +340,10 @@ function PollaListCard({
                 : 'text-text-muted'
           }`}
         >
-          ● {polla.status === 'OPEN' ? 'OPEN' : polla.status === 'LOCKED' ? 'LOCKED' : 'SETTLED'}
+          ● {polla.status}
         </span>
-        <span className="font-display tracking-[0.04em] text-[11px] text-text-muted uppercase">
-          {polla.matchesSettled} de {polla.numMatches} partidos
+        <span className="font-display tracking-[0.04em] text-xs text-text-muted uppercase">
+          {polla.matchesSettled} of {polla.numMatches} matches
         </span>
       </div>
     </Link>

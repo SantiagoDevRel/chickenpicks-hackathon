@@ -193,7 +193,7 @@ export default function CrearPollaPage() {
     if (!ready || !authenticated || !userPubkey || !wallet) {
       setSubmit({
         busy: false,
-        error: 'Sign in con email para crear la polla.',
+        error: 'Sign in with email to create the pool.',
         txSig: null,
       });
       return;
@@ -218,7 +218,7 @@ export default function CrearPollaPage() {
     if (step2.selected.length < 1) {
       setSubmit({
         busy: false,
-        error: 'Volvé al paso 2 y elegí al menos 1 partido.',
+        error: 'Go back to step 2 and pick at least 1 match.',
         txSig: null,
       });
       return;
@@ -229,7 +229,7 @@ export default function CrearPollaPage() {
     if (!tournament) {
       setSubmit({
         busy: false,
-        error: 'Volvé al paso 1 y elegí un torneo.',
+        error: 'Go back to step 1 and pick a tournament.',
         txSig: null,
       });
       return;
@@ -341,10 +341,10 @@ export default function CrearPollaPage() {
   // --- Render --------------------------------------------------------------
 
   return (
-    <main className="min-h-screen pb-12">
+    <main className="min-h-screen pb-20">
       <BrandHeader />
 
-      <div className="mx-auto max-w-md px-4 pt-6">
+      <div className="mx-auto max-w-md md:max-w-2xl px-4 pt-6">
         {/* Title row + back link */}
         <div className="flex items-center gap-3 mb-5">
           <Link
@@ -355,7 +355,7 @@ export default function CrearPollaPage() {
             ←
           </Link>
           <h1 className="font-display tracking-[0.04em] text-2xl text-text-primary uppercase">
-            Crear nueva polla
+            Create new pool
           </h1>
         </div>
 
@@ -383,16 +383,16 @@ export default function CrearPollaPage() {
               height={36}
             />
             <div className="flex-1">
-              <p className="text-xs text-amber font-display tracking-[0.04em]">
-                NECESITÁS LOGUEARTE PARA CREAR LA POLLA
+              <p className="text-sm text-amber font-display tracking-[0.04em]">
+                YOU NEED TO SIGN IN TO CREATE THE POOL
               </p>
-              <p className="text-[10px] text-text-muted mt-0.5">
-                Tu wallet embebida firma el create_polla on-chain.
+              <p className="text-xs text-text-muted mt-0.5">
+                Your embedded wallet signs create_polla on-chain.
               </p>
             </div>
             <button
               onClick={() => login()}
-              className="rounded-md bg-gold px-3 py-2 font-display tracking-[0.08em] text-[11px] text-black hover:bg-amber transition"
+              className="rounded-md bg-gold px-3 py-2 font-display tracking-[0.08em] text-xs text-black hover:bg-amber transition"
             >
               SIGN IN
             </button>

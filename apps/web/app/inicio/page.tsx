@@ -82,9 +82,9 @@ export default function InicioPage() {
 
   if (ready && !authenticated) {
     return (
-      <main className="min-h-screen pb-24">
+      <main className="min-h-screen pb-20">
         <BrandHeader />
-        <div className="mx-auto max-w-md px-4 pt-12 text-center">
+        <div className="mx-auto max-w-md px-4 pt-6 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/pollitos/pollito_capitan_lider.webp"
@@ -94,16 +94,16 @@ export default function InicioPage() {
             className="mx-auto mb-6"
           />
           <h1 className="font-display tracking-[0.04em] text-3xl text-text-primary uppercase">
-            Inicia sesión para entrar
+            Sign in to continue
           </h1>
-          <p className="mt-3 text-text-muted text-sm">
-            Tus pollas, picks y avisos viven en tu cuenta.
+          <p className="mt-3 text-text-muted text-base">
+            Your pools, picks, and alerts live in your account.
           </p>
           <button
             onClick={login}
             className="mt-6 rounded-md bg-gold px-6 py-3 font-display tracking-[0.08em] text-sm text-black hover:bg-amber transition"
           >
-            INICIAR SESIÓN
+            SIGN IN
           </button>
         </div>
       </main>
@@ -114,12 +114,12 @@ export default function InicioPage() {
   const previewAvisos = avisos.slice(0, 3);
 
   return (
-    <main className="min-h-screen pb-24 md:pb-12">
+    <main className="min-h-screen pb-20">
       <BrandHeader />
 
       <div className="mx-auto max-w-2xl px-4 pt-4">
-        {/* Hero with pollito + greeting */}
-        <section className="lp-card-hero p-5 mb-5 flex items-center gap-4">
+        {/* Hero with pollito + greeting (flat, no card shell — la-polla style) */}
+        <section className="mb-4 flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={pollitoImage(pollito, 'lider')}
@@ -129,49 +129,49 @@ export default function InicioPage() {
             className="flex-shrink-0 drop-shadow-[0_8px_28px_rgba(255,215,0,0.25)]"
           />
           <div className="min-w-0">
-            <div className="font-display tracking-[0.08em] text-[11px] text-gold uppercase">
+            <div className="font-display tracking-[0.08em] text-xs text-text-muted uppercase">
               {pollito.label}
             </div>
-            <div className="font-display tracking-[0.04em] text-[22px] text-text-primary uppercase leading-tight truncate">
-              Hola, {handle}
+            <div className="font-display tracking-[0.02em] text-[32px] text-gold uppercase leading-none truncate">
+              Hi, {handle}
             </div>
-            <div className="mt-1 text-[12px] text-text-muted">
+            <div className="mt-1 text-sm text-text-muted">
               {pollito.vibe}
             </div>
           </div>
         </section>
 
         {/* Two CTA cards */}
-        <section className="grid gap-3 mb-6">
+        <section className="grid gap-3 mb-6 md:grid-cols-2">
           <Link
             href="/crear"
-            className="rounded-md bg-gold px-5 py-4 font-display tracking-[0.08em] text-[15px] text-black flex items-center justify-between hover:bg-amber transition"
+            className="rounded-md bg-gold px-5 py-4 font-display tracking-[0.08em] text-sm text-black flex items-center justify-between hover:bg-amber transition min-h-12"
           >
-            <span>+ CREAR POLLA NUEVA</span>
+            <span>+ CREATE NEW POOL</span>
             <ArrowRight />
           </Link>
           <button
             type="button"
             onClick={() => alert('Invite-code flow coming soon')}
-            className="rounded-md border border-border-default bg-bg-card/50 backdrop-blur px-5 py-4 font-display tracking-[0.08em] text-[14px] text-text-primary flex items-center justify-between hover:border-gold transition"
+            className="rounded-md border border-border-default bg-bg-card/50 backdrop-blur px-5 py-4 font-display tracking-[0.08em] text-sm text-text-primary flex items-center justify-between hover:border-gold transition min-h-12"
           >
-            <span>🔗 UNIRME CON CÓDIGO</span>
+            <span>JOIN WITH CODE</span>
             <ArrowRight muted />
           </button>
         </section>
 
-        {/* MIS POLLAS ACTIVAS preview */}
+        {/* MY ACTIVE POOLS preview */}
         <section className="mb-6">
           <SectionHeading
-            title={`Mis pollas activas · ${pools.length}`}
+            title={`My active pools · ${pools.length}`}
             href="/pollas"
-            ctaLabel="Ver todas"
+            ctaLabel="See all"
           />
           {loadingPools && <SkeletonCard />}
           {!loadingPools && previewPools.length === 0 && (
             <div className="lp-card p-6 text-center">
-              <p className="text-text-muted text-sm">
-                Aún no tienes pollas. Crea una o únete con un código.
+              <p className="text-text-muted text-base">
+                No pools yet. Create one or join with a code.
               </p>
             </div>
           )}
@@ -184,18 +184,18 @@ export default function InicioPage() {
           )}
         </section>
 
-        {/* AVISOS RECIENTES preview */}
+        {/* RECENT ALERTS preview */}
         <section className="mb-6">
           <SectionHeading
-            title="Avisos recientes"
+            title="Recent alerts"
             href="/avisos"
-            ctaLabel="Ver todas"
+            ctaLabel="See all"
           />
           {loadingAvisos && <SkeletonCard />}
           {!loadingAvisos && previewAvisos.length === 0 && (
             <div className="lp-card p-6 text-center">
-              <p className="text-text-muted text-sm">
-                Aún no hay avisos.
+              <p className="text-text-muted text-base">
+                No alerts yet.
               </p>
             </div>
           )}
@@ -227,12 +227,12 @@ function SectionHeading({
 }) {
   return (
     <div className="flex items-baseline justify-between mb-2.5 px-1">
-      <h2 className="font-display tracking-[0.08em] text-[12px] text-gold uppercase">
+      <h2 className="lp-section-title text-gold">
         {title}
       </h2>
       <Link
         href={href}
-        className="font-display tracking-[0.06em] text-[11px] text-text-muted hover:text-text-primary transition uppercase"
+        className="font-display tracking-[0.06em] text-xs text-text-muted hover:text-text-primary transition uppercase"
       >
         {ctaLabel} →
       </Link>
@@ -247,23 +247,23 @@ function PoolPreview({ pool }: { pool: Pool }) {
       className="lp-card p-4 flex items-center justify-between hover:border-border-strong transition"
     >
       <div className="min-w-0">
-        <div className="font-display tracking-[0.04em] text-base text-text-primary uppercase truncate">
+        <div className="font-display tracking-[0.04em] text-xl text-text-primary uppercase truncate">
           {pool.name}
         </div>
-        <div className="text-[11px] text-text-muted truncate">
+        <div className="text-xs text-text-muted truncate">
           {pool.tournament}
         </div>
-        <div className="mt-1 flex items-center gap-2 text-[11px] text-text-muted">
-          <span>${pool.entryUsdc} c/u</span>
+        <div className="mt-1 flex items-center gap-2 text-xs text-text-muted">
+          <span>${pool.entryUsdc} each</span>
           <span>·</span>
           <span className="text-gold font-display tracking-[0.06em]">
-            POZO ${pool.totalPoolUsdc}
+            POT ${pool.totalPoolUsdc}
           </span>
         </div>
       </div>
       <div className="text-right ml-3">
         <div
-          className={`font-display tracking-[0.08em] text-[10px] ${
+          className={`font-display tracking-[0.08em] text-xs ${
             pool.status === 'OPEN'
               ? 'text-turf'
               : pool.status === 'LOCKED'
@@ -273,10 +273,10 @@ function PoolPreview({ pool }: { pool: Pool }) {
         >
           {pool.status}
         </div>
-        <div className="font-display tracking-[0.04em] text-[20px] text-text-primary leading-none mt-0.5">
+        <div className="font-display tracking-[0.04em] text-xl text-text-primary leading-none mt-0.5">
           {pool.numParticipants}
         </div>
-        <div className="font-display tracking-[0.06em] text-[9px] text-text-muted">
+        <div className="font-display tracking-[0.06em] text-[11px] text-text-muted">
           PLAYERS
         </div>
       </div>
@@ -301,10 +301,10 @@ function AvisoPreviewRow({
         <BellIcon />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="font-display tracking-[0.02em] text-[14px] text-text-primary truncate">
+        <div className="font-display tracking-[0.02em] text-sm text-text-primary truncate">
           {aviso.title}
         </div>
-        <div className="text-[11px] text-text-muted truncate mt-0.5">
+        <div className="text-xs text-text-muted truncate mt-0.5">
           {aviso.subtitle}
         </div>
       </div>

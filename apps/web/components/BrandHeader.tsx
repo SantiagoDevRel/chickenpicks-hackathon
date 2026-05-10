@@ -13,7 +13,7 @@ export function BrandHeader() {
   const { pollito } = usePollito();
   return (
     <header
-      className="sticky top-0 z-40 px-4 pt-4 pb-3 backdrop-blur-md"
+      className="sticky top-0 z-40 px-4 pt-3 pb-2 backdrop-blur-md"
       style={{ background: 'rgba(8, 12, 16, 0.85)' }}
     >
       <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
@@ -22,15 +22,15 @@ export function BrandHeader() {
           <img
             src={pollitoImage(pollito, 'lider')}
             alt={pollito.label}
-            width={44}
-            height={44}
+            width={36}
+            height={36}
             style={{ objectFit: 'contain' }}
             className="transition-transform group-hover:scale-105"
           />
           <span
             className="font-display leading-none tracking-[0.04em] flex items-baseline gap-[5px]"
             style={{
-              fontSize: 22,
+              fontSize: 18,
               textShadow: '0 2px 6px rgba(0,0,0,0.55)',
             }}
           >

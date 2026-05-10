@@ -93,17 +93,17 @@ export default function PerfilPage() {
 
   if (ready && !authenticated) {
     return (
-      <main className="min-h-screen pb-24">
+      <main className="min-h-screen pb-20">
         <BrandHeader />
-        <div className="mx-auto max-w-md px-4 pt-12 text-center">
+        <div className="mx-auto max-w-md px-4 pt-6 text-center">
           <h1 className="font-display tracking-[0.04em] text-3xl text-text-primary uppercase">
-            Inicia sesión para ver tu perfil
+            Sign in to view your profile
           </h1>
           <button
             onClick={login}
             className="mt-6 rounded-md bg-gold px-6 py-3 font-display tracking-[0.08em] text-sm text-black hover:bg-amber transition"
           >
-            INICIAR SESIÓN
+            SIGN IN
           </button>
         </div>
       </main>
@@ -111,12 +111,12 @@ export default function PerfilPage() {
   }
 
   return (
-    <main className="min-h-screen pb-24 md:pb-12">
+    <main className="min-h-screen pb-20">
       <BrandHeader />
 
       <div className="mx-auto max-w-2xl px-4 pt-4">
-        <h1 className="font-display tracking-[0.04em] text-[28px] md:text-3xl text-text-primary uppercase mb-5">
-          Mi perfil
+        <h1 className="font-display tracking-[0.04em] text-2xl md:text-3xl text-text-primary uppercase mb-5 text-center">
+          My profile
         </h1>
 
         {/* Hero: pollito + name + contact */}
@@ -125,7 +125,7 @@ export default function PerfilPage() {
             type="button"
             onClick={() => setShowPicker(true)}
             className="relative inline-block group"
-            aria-label="Cambiar pollito"
+            aria-label="Change avatar"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -147,16 +147,16 @@ export default function PerfilPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Tu nombre"
+                  placeholder="Your name"
                   autoFocus
                   className="rounded-md bg-bg-base/60 border border-border-default px-3 py-1.5 text-center font-display tracking-[0.04em] text-lg text-text-primary focus:border-gold focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={saveName}
-                  className="rounded-md bg-gold px-3 py-1.5 font-display tracking-[0.08em] text-[10px] text-black hover:bg-amber transition"
+                  className="rounded-md bg-gold px-3 py-1.5 font-display tracking-[0.08em] text-xs text-black hover:bg-amber transition"
                 >
-                  GUARDAR
+                  SAVE
                 </button>
               </>
             ) : (
@@ -167,28 +167,28 @@ export default function PerfilPage() {
                 <button
                   type="button"
                   onClick={() => setEditingName(true)}
-                  className="rounded-md border border-border-default bg-bg-card/40 px-2.5 py-1 font-display tracking-[0.08em] text-[10px] text-text-muted hover:text-text-primary hover:border-border-strong transition"
+                  className="rounded-md border border-border-default bg-bg-card/40 px-2.5 py-1 font-display tracking-[0.08em] text-xs text-text-muted hover:text-text-primary hover:border-border-strong transition"
                 >
-                  EDITAR
+                  EDIT
                 </button>
               </>
             )}
           </div>
 
           {(email || phone) && (
-            <div className="mt-2 text-[12px] text-text-muted space-y-0.5">
-              {email && <div>📧 {email}</div>}
-              {phone && <div>📱 {phone}</div>}
+            <div className="mt-2 text-sm text-text-muted space-y-0.5">
+              {email && <div>{email}</div>}
+              {phone && <div>{phone}</div>}
             </div>
           )}
         </section>
 
-        {/* Cuenta para cobrar */}
-        <Section label="Cuenta para cobrar">
+        {/* Payout account */}
+        <Section label="Payout account">
           <div className="lp-card p-4">
             <div className="flex items-center gap-2 mb-1">
               <SolanaIcon />
-              <span className="font-display tracking-[0.06em] text-[11px] text-text-muted uppercase">
+              <span className="font-display tracking-[0.06em] text-xs text-text-muted uppercase">
                 Solana wallet · Devnet
               </span>
             </div>
@@ -198,71 +198,31 @@ export default function PerfilPage() {
               disabled={!wallet}
               className="mt-2 w-full text-left rounded-md bg-bg-base/60 border border-border-subtle p-2.5 hover:border-border-default transition disabled:opacity-50"
             >
-              <div className="font-mono text-[11px] text-text-secondary break-all leading-relaxed">
+              <div className="font-mono text-xs text-text-secondary break-all leading-relaxed">
                 {wallet ?? '—'}
               </div>
-              <div className="mt-1.5 text-[10px] font-display tracking-[0.08em] text-text-muted">
+              <div className="mt-1.5 text-xs font-display tracking-[0.08em] text-text-muted">
                 {copied ? (
-                  <span className="text-turf">COPIADO ✓</span>
+                  <span className="text-turf">COPIED ✓</span>
                 ) : (
-                  'TOCA PARA COPIAR'
+                  'TAP TO COPY'
                 )}
               </div>
             </button>
-            <p className="mt-2 text-[11px] text-text-muted leading-relaxed">
-              Los premios de cada polla se transfieren directo a esta wallet —
-              sin intermediarios, sin esperas.
+            <p className="mt-2 text-sm text-text-muted leading-relaxed">
+              Pool prizes are sent directly to this wallet — no intermediaries,
+              no delays.
             </p>
           </div>
-        </Section>
-
-        {/* Idioma */}
-        <Section label="Idioma" className="mt-4">
-          <div className="lp-card p-3 grid grid-cols-2 gap-2">
-            <SegButton
-              active={lang === 'es'}
-              onClick={() => saveLang('es')}
-              label="🇨🇴 Español"
-            />
-            <SegButton
-              active={lang === 'en'}
-              onClick={() => saveLang('en')}
-              label="🇺🇸 English"
-            />
-          </div>
-        </Section>
-
-        {/* Tamaño del texto */}
-        <Section label="Tamaño del texto" className="mt-4">
-          <div className="lp-card p-3 grid grid-cols-3 gap-2">
-            <SegButton
-              active={textSize === '-30'}
-              onClick={() => saveTextSize('-30')}
-              label="-30%"
-            />
-            <SegButton
-              active={textSize === '100'}
-              onClick={() => saveTextSize('100')}
-              label="100%"
-            />
-            <SegButton
-              active={textSize === '+60'}
-              onClick={() => saveTextSize('+60')}
-              label="+60%"
-            />
-          </div>
-          <p className="mt-2 px-1 text-[11px] text-text-muted">
-            Próximamente — placeholder de accesibilidad.
-          </p>
         </Section>
 
         {/* Admin pill */}
         {isAdmin && (
           <Link
             href="/admin"
-            className="mt-6 block rounded-md border-2 border-gold/50 bg-gold/[0.05] px-5 py-3.5 text-center font-display tracking-[0.08em] text-[13px] text-gold uppercase hover:bg-gold/10 transition"
+            className="mt-6 block rounded-md border-2 border-gold/50 bg-gold/[0.05] px-5 py-3.5 text-center font-display tracking-[0.08em] text-sm text-gold uppercase hover:bg-gold/10 transition"
           >
-            🛡 Panel de administración
+            Admin panel
           </Link>
         )}
 
@@ -270,9 +230,9 @@ export default function PerfilPage() {
         <button
           type="button"
           onClick={() => logout()}
-          className="mt-6 w-full py-3 text-center font-display tracking-[0.08em] text-[13px] text-red-alert hover:underline transition uppercase"
+          className="mt-6 w-full py-3 text-center font-display tracking-[0.08em] text-sm text-red-alert hover:underline transition uppercase border border-red-alert/30 rounded-md hover:bg-red-alert/5"
         >
-          Cerrar sesión
+          Sign out
         </button>
       </div>
 

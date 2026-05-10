@@ -40,24 +40,24 @@ export function Step1Info({
 
   return (
     <div className="space-y-6">
-      {/* Información básica */}
+      {/* Basic info */}
       <section className="lp-card p-5 sm:p-6">
-        <h2 className="lp-section-title mb-4">Información básica</h2>
+        <h2 className="lp-section-title mb-4">Basic info</h2>
         <label className="block">
           <span className="font-display tracking-[0.04em] text-xs text-text-secondary">
-            Nombre <span className="text-red-alert">*</span>
+            Name <span className="text-red-alert">*</span>
           </span>
           <input
             type="text"
             value={value.name}
             onChange={(e) => onChange({ ...value, name: e.target.value })}
-            placeholder="Ej: Polla Mundial Oficina"
+            placeholder="e.g. World Cup Office Pool"
             maxLength={NAME_BYTE_LIMIT * 2}
             className="mt-2 w-full rounded-md bg-bg-base/60 border border-border-default px-3 py-3 text-text-primary placeholder:text-text-muted focus:border-gold focus:outline-none transition"
           />
-          <div className="mt-1.5 flex items-center justify-between text-[10px]">
+          <div className="mt-1.5 flex items-center justify-between text-xs">
             <span className="text-text-muted">
-              Máx 32 caracteres (on-chain)
+              Max 32 characters (on-chain limit)
             </span>
             <span
               className={
@@ -72,10 +72,10 @@ export function Step1Info({
         </label>
       </section>
 
-      {/* Torneos */}
+      {/* Tournaments */}
       <section className="lp-card p-5 sm:p-6">
         <h2 className="lp-section-title mb-4">
-          Torneos <span className="text-red-alert">*</span>
+          Tournament <span className="text-red-alert">*</span>
         </h2>
         <ul className="space-y-2.5">
           {TOURNAMENTS.map((t) => (
@@ -89,12 +89,11 @@ export function Step1Info({
         </ul>
       </section>
 
-      {/* Tipo de polla — informational copy only */}
+      {/* Pool type — informational copy only */}
       <section className="lp-card p-5 sm:p-6">
-        <h2 className="lp-section-title mb-3">Tipo de polla</h2>
+        <h2 className="lp-section-title mb-3">Pool type</h2>
         <p className="text-sm text-text-secondary leading-relaxed">
-          Solo personas con el link o el código de invitación podrán unirse a tu
-          polla.
+          Only people with the invite link or code can join your pool.
         </p>
       </section>
 
@@ -105,7 +104,7 @@ export function Step1Info({
           onClick={onCancel}
           className="rounded-md border border-border-default bg-bg-card/50 backdrop-blur px-5 py-3 font-display tracking-[0.08em] text-xs text-text-muted hover:text-text-primary hover:border-border-strong transition"
         >
-          Cancelar
+          Cancel
         </button>
         <button
           type="button"
@@ -113,7 +112,7 @@ export function Step1Info({
           disabled={!canContinue}
           className="rounded-md bg-gold px-6 py-3 font-display tracking-[0.08em] text-xs text-black hover:bg-amber disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
-          Continuar →
+          Continue →
         </button>
       </div>
     </div>
