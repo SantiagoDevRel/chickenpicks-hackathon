@@ -43,25 +43,55 @@ export type VoiceCallbacks = {
   ) => Promise<{ ok: boolean; sig?: string; error?: string }>;
 };
 
+// Bridge quote popup — when the voice agent's preview_bridge_quote tool
+// fires, we render this modal instead of (only) speaking. The CTA inside
+// the modal collapses the demo back to "Use Solana USDC devnet".
+export type BridgeQuoteData = {
+  fromChain: string;
+  fromChainId: number;
+  amountUsdc: string;
+  toChain: 'Solana';
+  toToken: 'USDC';
+  durationSeconds: number | null;
+  feeUsd: number | null;
+  provider: string | null;
+};
+export type BridgeQuoteState =
+  | { kind: 'idle' }
+  | { kind: 'open'; data: BridgeQuoteData };
+
 type Ctx = {
   callbacks: VoiceCallbacks;
   setCallbacks: (cb: VoiceCallbacks) => void;
+  bridgeQuote: BridgeQuoteState;
+  setBridgeQuote: (s: BridgeQuoteState) => void;
 };
 
 const VoiceContext = createContext<Ctx>({
   callbacks: {},
   setCallbacks: () => {},
+  bridgeQuote: { kind: 'idle' },
+  setBridgeQuote: () => {},
 });
 
 export function VoiceCallbacksProvider({ children }: { children: ReactNode }) {
   const [callbacks, setLocalCallbacks] = useState<VoiceCallbacks>({});
+  const [bridgeQuote, setLocalBridgeQuote] = useState<BridgeQuoteState>({
+    kind: 'idle',
+  });
 
   const setCallbacks = useCallback((cb: VoiceCallbacks) => {
     setLocalCallbacks(cb);
   }, []);
 
+  const setBridgeQuote = useCallback((s: BridgeQuoteState) => {
+    setLocalBridgeQuote(s);
+  }, []);
+
   return (
-    <VoiceContext.Provider value={{ callbacks, setCallbacks }}>
+    <VoiceContext.Provider
+      value={{ callbacks, setCallbacks, bridgeQuote, setBridgeQuote }}
+    >
       {children}
     </VoiceContext.Provider>
   );
@@ -73,4 +103,12 @@ export function useVoiceCallbacks(): VoiceCallbacks {
 
 export function useSetVoiceCallbacks(): (cb: VoiceCallbacks) => void {
   return useContext(VoiceContext).setCallbacks;
+}
+
+export function useBridgeQuote(): BridgeQuoteState {
+  return useContext(VoiceContext).bridgeQuote;
+}
+
+export function useSetBridgeQuote(): (s: BridgeQuoteState) => void {
+  return useContext(VoiceContext).setBridgeQuote;
 }

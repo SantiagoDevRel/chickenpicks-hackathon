@@ -35,6 +35,7 @@ export function Step3Prizes({
   busy,
   error,
   txSig,
+  progress,
   onChange,
   onBack,
   onCancel,
@@ -44,6 +45,7 @@ export function Step3Prizes({
   busy: boolean;
   error: string | null;
   txSig: string | null;
+  progress: { current: number; total: number } | null;
   onChange: (v: Step3Value) => void;
   onBack: () => void;
   onCancel: () => void;
@@ -195,6 +197,32 @@ export function Step3Prizes({
           </span>
         </div>
       </section>
+
+      {/* Progress (during the add_match × N loop) */}
+      {busy && progress && progress.total > 0 && (
+        <div className="rounded-md border border-gold/30 bg-gold/5 px-3 py-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="font-display tracking-[0.08em] text-[11px] text-gold">
+              {progress.current === 0
+                ? 'CREATING POOL…'
+                : `ADDING MATCH ${progress.current + 1} OF ${progress.total}`}
+            </span>
+            <span className="font-display tracking-[0.04em] text-[11px] text-text-muted">
+              {Math.round((progress.current / progress.total) * 100)}%
+            </span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-bg-base/60 overflow-hidden">
+            <div
+              className="h-full bg-gold transition-[width] duration-300"
+              style={{ width: `${(progress.current / progress.total) * 100}%` }}
+            />
+          </div>
+          <p className="mt-2 text-[10px] text-text-muted">
+            Each match needs its own on-chain account. Don&apos;t close this
+            tab until it finishes.
+          </p>
+        </div>
+      )}
 
       {/* Error / success */}
       {error && (

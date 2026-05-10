@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useConversation } from '@elevenlabs/react';
 import { useSolanaWallets } from '@privy-io/react-auth/solana';
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { useSetBridgeQuote } from '@/lib/VoiceContext';
+import { buildBridgeQuoteData } from './BridgeQuoteModal';
 import {
   getAccount,
   getAssociatedTokenAddressSync,
@@ -77,6 +79,7 @@ export function VoiceAgent({
   const { wallets } = useSolanaWallets();
   const wallet = wallets[0];
   const [error, setError] = useState<string | null>(null);
+  const setBridgeQuote = useSetBridgeQuote();
 
   // Pulled out so we can register both list_pools (new) and list_pollas
   // (legacy) names against the same implementation.
@@ -271,26 +274,26 @@ export function VoiceAgent({
       // story alive without needing to actually execute the bridge.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       preview_bridge_quote: async (params: any) => {
-        const chainNameToId: Record<string, number> = {
-          ethereum: 1,
-          eth: 1,
-          mainnet: 1,
-          polygon: 137,
-          matic: 137,
-          arbitrum: 42161,
-          arb: 42161,
-          optimism: 10,
-          op: 10,
-          base: 8453,
-          bsc: 56,
-          bnb: 56,
+        const chainNameToId: Record<string, { id: number; label: string }> = {
+          ethereum: { id: 1, label: 'Ethereum' },
+          eth: { id: 1, label: 'Ethereum' },
+          mainnet: { id: 1, label: 'Ethereum' },
+          polygon: { id: 137, label: 'Polygon' },
+          matic: { id: 137, label: 'Polygon' },
+          arbitrum: { id: 42161, label: 'Arbitrum' },
+          arb: { id: 42161, label: 'Arbitrum' },
+          optimism: { id: 10, label: 'Optimism' },
+          op: { id: 10, label: 'Optimism' },
+          base: { id: 8453, label: 'Base' },
+          bsc: { id: 56, label: 'BSC' },
+          bnb: { id: 56, label: 'BSC' },
         };
         const rawChain = (params?.from_chain ?? '')
           .toString()
           .toLowerCase()
           .trim();
-        const fromChain = chainNameToId[rawChain];
-        if (!fromChain) {
+        const chainEntry = chainNameToId[rawChain];
+        if (!chainEntry) {
           return {
             supported: false,
             message: `Chain "${rawChain}" is not in our supported list yet.`,
@@ -301,14 +304,39 @@ export function VoiceAgent({
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
-              from_chain: fromChain,
+              from_chain: chainEntry.id,
               amount: params?.amount?.toString(),
             }),
           });
           const data = await res.json();
-          return data;
+          // Open the bridge-quote popup with the LI.FI data + a CTA that
+          // collapses the convo back to "use Solana USDC devnet" for the
+          // demo. The agent should verbally confirm "right now we're only
+          // on Solana devnet" when it sees this tool succeed.
+          const amountUsdcReadable = (() => {
+            const raw = params?.amount?.toString() ?? '1000000';
+            const n = Number(raw);
+            if (!Number.isFinite(n)) return '1';
+            return (n / 1e6).toFixed(2);
+          })();
+          setBridgeQuote({
+            kind: 'open',
+            data: buildBridgeQuoteData(
+              chainEntry.id,
+              chainEntry.label,
+              amountUsdcReadable,
+              data,
+            ),
+          });
+          return {
+            success: true,
+            popup_shown: true,
+            ...data,
+            message:
+              "A bridge quote popup is now visible to the user. Tell them: 'Right now ChickenPicks is only on Solana devnet — the EVM bridge is read-only for the demo. Tap USE SOLANA USDC DEVNET to continue.' DO NOT apologize.",
+          };
         } catch (e) {
-          return { supported: false, error: (e as Error).message };
+          return { success: false, supported: false, error: (e as Error).message };
         }
       },
 

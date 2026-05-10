@@ -136,7 +136,16 @@ type SubmitStatus = {
   busy: boolean;
   error: string | null;
   txSig: string | null;
+  /** Progress through the add_match loop after create_polla succeeds. */
+  progress: { current: number; total: number } | null;
 };
+
+// Per-account rent (lamports) — read once via conn.getMinimumBalanceForRentExemption
+// would be cleaner, but each Match account is ~1.4M lamports based on observed
+// txs (insufficient lamports 1092480, need 1426800). Conservative buffer.
+const RENT_PER_MATCH_LAMPORTS = 1_500_000;
+const TX_FEE_BUFFER_LAMPORTS = 100_000; // generous fee headroom per tx
+const POLLA_OVERHEAD_LAMPORTS = 5_000_000; // create_polla rent + ATA + buffer
 
 export default function CrearPollaPage() {
   const router = useRouter();
@@ -164,6 +173,7 @@ export default function CrearPollaPage() {
     busy: false,
     error: null,
     txSig: null,
+    progress: null,
   });
 
   // Used to disable the wizard if the page is in the middle of submitting —
@@ -195,14 +205,16 @@ export default function CrearPollaPage() {
         busy: false,
         error: 'Sign in with email to create the pool.',
         txSig: null,
+        progress: null,
       });
       return;
     }
     if (!tiersAreValid(step3.tiers)) {
       setSubmit({
         busy: false,
-        error: 'Los premios deben sumar exactamente 100%.',
+        error: 'Prize tiers must add up to exactly 100%.',
         txSig: null,
+        progress: null,
       });
       return;
     }
@@ -210,8 +222,9 @@ export default function CrearPollaPage() {
     if (!Number.isFinite(entryNum) || entryNum <= 0) {
       setSubmit({
         busy: false,
-        error: 'El monto de entrada debe ser mayor a 0.',
+        error: 'Entry amount must be greater than 0.',
         txSig: null,
+        progress: null,
       });
       return;
     }
@@ -220,6 +233,7 @@ export default function CrearPollaPage() {
         busy: false,
         error: 'Go back to step 2 and pick at least 1 match.',
         txSig: null,
+        progress: null,
       });
       return;
     }
@@ -231,14 +245,37 @@ export default function CrearPollaPage() {
         busy: false,
         error: 'Go back to step 1 and pick a tournament.',
         txSig: null,
+        progress: null,
       });
       return;
     }
 
     submitInFlight.current = true;
-    setSubmit({ busy: true, error: null, txSig: null });
+    setSubmit({ busy: true, error: null, txSig: null, progress: null });
     try {
       const conn = new Connection(SOLANA_RPC_URL, 'confirmed');
+
+      // Preflight: check user's SOL balance is enough to fund create_polla
+      // + every add_match before kicking off any tx. This prevents the
+      // partial-failure footgun where the polla gets created but only some
+      // match accounts allocate (leaving an unsettleable polla on chain).
+      const numMatches = step2.selected.length;
+      const requiredLamports =
+        POLLA_OVERHEAD_LAMPORTS +
+        numMatches * (RENT_PER_MATCH_LAMPORTS + TX_FEE_BUFFER_LAMPORTS);
+      const userBalance = await conn.getBalance(userPubkey);
+      if (userBalance < requiredLamports) {
+        const needSol = (requiredLamports / 1e9).toFixed(3);
+        const haveSol = (userBalance / 1e9).toFixed(3);
+        setSubmit({
+          busy: false,
+          error: `Need ~${needSol} SOL to create this pool with ${numMatches} matches. You have ${haveSol} SOL. Pick fewer matches or top up your wallet.`,
+          txSig: null,
+          progress: null,
+        });
+        submitInFlight.current = false;
+        return;
+      }
       // Privy's Solana wallet returns a different shape than Anchor expects.
       // This adapter mirrors the one in apps/web/app/pollas/[id]/page.tsx.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -266,7 +303,6 @@ export default function CrearPollaPage() {
       const nameBytes = padToBytes(step1.name.trim(), 32);
       const tournamentBytes = padToBytes(tournament.name, 32);
       const entryAmount = usdcToBaseUnits(step3.entryUsdc);
-      const numMatches = step2.selected.length;
 
       // Pad prize_distribution to exactly MAX_PRIZE_TIERS slots.
       const prizeDistribution: number[] = [];
@@ -300,9 +336,18 @@ export default function CrearPollaPage() {
 
       // 2) add_match × N (sequential — they share the same `creator` signer
       //    and order matters because polla.num_matches is checked per-call).
+      //    Update progress on each iteration so Step3Prizes can render
+      //    "Adding match X of N" — without this the user sees "creating..."
+      //    for 30-180s with no feedback.
       for (let i = 0; i < step2.selected.length; i++) {
         const fix = step2.selected[i];
         if (!fix) continue;
+        setSubmit({
+          busy: true,
+          error: null,
+          txSig: null,
+          progress: { current: i, total: step2.selected.length },
+        });
         const homeBytes = padToBytes(fix.homeTeam, 16);
         const awayBytes = padToBytes(fix.awayTeam, 16);
         const matchAccount = matchPda(polla, i);
@@ -318,20 +363,32 @@ export default function CrearPollaPage() {
           .rpc();
       }
 
-      setSubmit({ busy: false, error: null, txSig: createSig });
+      setSubmit({
+        busy: false,
+        error: null,
+        txSig: createSig,
+        progress: { current: step2.selected.length, total: step2.selected.length },
+      });
 
       // Tiny delay so the user can see the success toast before we redirect.
       setTimeout(() => {
         router.push(`/pollas/${polla.toBase58()}`);
       }, 900);
     } catch (e) {
-      // TODO: detect "insufficient funds for rent" specifically and surface a
-      // helpful CTA pointing the user at a SOL faucet. For now the raw chain
-      // error message is shown verbatim.
+      // Surface a friendlier error for the most common partial-failure case
+      // (insufficient lamports mid-loop) so the user knows the polla is
+      // half-created and can't be settled.
+      const raw = (e as Error).message ?? 'Tx failed.';
+      const isInsufficient =
+        raw.includes('insufficient lamports') ||
+        raw.includes('insufficient funds');
       setSubmit({
         busy: false,
-        error: (e as Error).message ?? 'Tx failed.',
+        error: isInsufficient
+          ? 'Ran out of SOL while creating match accounts. The polla was partly created and cannot be settled — please top up your wallet and create a new pool with fewer matches.'
+          : raw,
         txSig: null,
+        progress: null,
       });
     } finally {
       submitInFlight.current = false;
@@ -425,6 +482,7 @@ export default function CrearPollaPage() {
             busy={submit.busy}
             error={submit.error}
             txSig={submit.txSig}
+            progress={submit.progress}
             onChange={setStep3}
             onBack={() => setStep(2)}
             onCancel={onCancel}

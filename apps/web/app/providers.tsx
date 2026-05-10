@@ -4,6 +4,7 @@ import { PrivyProvider } from '@privy-io/react-auth';
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
+import { BridgeQuoteModal } from '@/components/BridgeQuoteModal';
 import { PollitoPickerModal } from '@/components/PollitoPickerModal';
 import { PersistentVoiceAgent } from '@/components/PersistentVoiceAgent';
 import { VoiceCallbacksProvider } from '@/lib/VoiceContext';
@@ -62,6 +63,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <VoiceCallbacksProvider>
           {children}
           <PollitoPickerModal />
+          <BridgeQuoteModal />
           <PersistentVoiceAgent />
         </VoiceCallbacksProvider>
       </QueryClientProvider>
