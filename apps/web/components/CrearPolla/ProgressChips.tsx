@@ -9,8 +9,8 @@ export type WizardStep = 1 | 2 | 3;
 
 const LABELS: Record<WizardStep, string> = {
   1: 'Info',
-  2: 'Partidos',
-  3: 'Configuración',
+  2: 'Matches',
+  3: 'Setup',
 };
 
 export function ProgressChips({
