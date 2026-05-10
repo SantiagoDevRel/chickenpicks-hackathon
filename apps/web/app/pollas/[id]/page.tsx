@@ -133,6 +133,9 @@ export default function PollaDetailPage() {
   const [polla, setPolla] = useState<RawPolla | null>(null);
   const [matches, setMatches] = useState<RawMatch[]>([]);
   const [prediction, setPrediction] = useState<RawPrediction | null>(null);
+  const [allPredictions, setAllPredictions] = useState<
+    { pubkey: string; predictor: string; points: number; finalRank: number; claimed: boolean }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -187,6 +190,32 @@ export default function PollaDetailPage() {
         setScores(
           matchesList.map(() => ({ home: '', away: '' })),
         );
+
+        // Load ALL predictions for the leaderboard. We do this for every
+        // status (open, locked, settled) so the page can show "N players
+        // joined" + (when settled) the final ranking. memcmp filters by
+        // the polla pubkey at offset 8 (first field after the 8-byte
+        // discriminator on the Prediction account).
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const allPreds = await (program.account as any).prediction.all([
+            { memcmp: { offset: 8, bytes: pollaPubkey!.toBase58() } },
+          ]);
+          if (!cancelled) {
+            setAllPredictions(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              allPreds.map(({ publicKey, account }: any) => ({
+                pubkey: publicKey.toBase58(),
+                predictor: account.predictor.toBase58(),
+                points: Number(account.points ?? 0),
+                finalRank: Number(account.finalRank ?? 255),
+                claimed: !!account.claimed,
+              })),
+            );
+          }
+        } catch {
+          if (!cancelled) setAllPredictions([]);
+        }
 
         // Load user's prediction if logged in
         if (userPubkey) {
@@ -923,6 +952,84 @@ export default function PollaDetailPage() {
                         <p className="text-text-muted text-sm">
                           Picks locked. Waiting for results.
                         </p>
+                      </div>
+                    )}
+                    {/* Leaderboard — visible whenever the polla has at least
+                        one prediction. When status=SETTLED, predictions are
+                        ranked (finalRank 0 = winner). When OPEN/LOCKED,
+                        rank is 0xFF (255) for everyone — we just sort by
+                        points so the join count is visible. */}
+                    {allPredictions.length > 0 && (
+                      <div className="mb-4">
+                        <div className="font-display tracking-[0.08em] text-[10px] text-text-muted mb-2">
+                          {statusKey(polla.status) === 'SETTLED'
+                            ? `LEADERBOARD · ${allPredictions.length} PLAYERS`
+                            : `JOINED · ${allPredictions.length} PLAYERS`}
+                        </div>
+                        <div className="rounded-md border border-border-subtle bg-bg-base/40 overflow-hidden">
+                          {[...allPredictions]
+                            .sort((a, b) => {
+                              if (statusKey(polla.status) === 'SETTLED') {
+                                // rank 255 = unranked → push to bottom
+                                if (a.finalRank === 255 && b.finalRank !== 255) return 1;
+                                if (b.finalRank === 255 && a.finalRank !== 255) return -1;
+                                if (a.finalRank !== b.finalRank)
+                                  return a.finalRank - b.finalRank;
+                              }
+                              return b.points - a.points;
+                            })
+                            .slice(0, 10)
+                            .map((p, idx) => {
+                              const isMe =
+                                userPubkey && p.predictor === userPubkey.toBase58();
+                              const isPrize =
+                                statusKey(polla.status) === 'SETTLED' &&
+                                p.finalRank < 255 &&
+                                (polla.prizeDistribution?.[p.finalRank] ?? 0) > 0;
+                              const displayRank =
+                                statusKey(polla.status) === 'SETTLED' && p.finalRank < 255
+                                  ? p.finalRank + 1
+                                  : idx + 1;
+                              return (
+                                <div
+                                  key={p.pubkey}
+                                  className={`flex items-center gap-2 px-3 py-2 border-b border-border-subtle last:border-0 ${
+                                    isMe ? 'bg-gold/10' : ''
+                                  }`}
+                                >
+                                  <span
+                                    className={`font-display tracking-[0.04em] text-xs w-7 ${
+                                      isPrize ? 'text-gold' : 'text-text-muted'
+                                    }`}
+                                  >
+                                    #{displayRank}
+                                  </span>
+                                  <span
+                                    className={`font-mono text-xs flex-1 truncate ${
+                                      isMe ? 'text-gold' : 'text-text-primary'
+                                    }`}
+                                  >
+                                    {isMe
+                                      ? 'YOU'
+                                      : `${p.predictor.slice(0, 4)}…${p.predictor.slice(-4)}`}
+                                  </span>
+                                  <span className="font-display tracking-[0.04em] text-xs text-text-muted">
+                                    {p.points} pts
+                                  </span>
+                                  {p.claimed && (
+                                    <span className="font-display tracking-[0.04em] text-[9px] text-turf">
+                                      ✓ CLAIMED
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          {allPredictions.length > 10 && (
+                            <div className="px-3 py-2 text-center text-[10px] font-display tracking-[0.08em] text-text-muted">
+                              +{allPredictions.length - 10} MORE
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                     {prediction && statusKey(polla.status) === 'SETTLED' && (
