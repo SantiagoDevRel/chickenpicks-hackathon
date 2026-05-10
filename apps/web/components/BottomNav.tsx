@@ -6,6 +6,10 @@
 // BrandHeader. Active route gets a gold tint; the center "+" tab is bigger,
 // filled gold, and routes to /crear.
 //
+// The Profile tab uses the user's chosen pollito as its icon (Twitter-style
+// avatar-in-tab). Falls back to the generic person SVG if the image fails
+// or while pollito state is hydrating.
+//
 // Mounted globally in app/layout.tsx so it's always visible while a user
 // is signed in. We hide it on the public landing page (/) so guests see
 // the marketing hero unobscured.
@@ -13,6 +17,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
+import { pollitoImage, usePollito } from '@/lib/usePollito';
 
 type Tab = {
   href: string;
@@ -32,6 +37,7 @@ const TABS: Tab[] = [
 export function BottomNav() {
   const pathname = usePathname();
   const { authenticated, ready } = usePrivy();
+  const { pollito } = usePollito();
 
   // Hide on the public landing route — that page has its own marketing
   // CTA, the bottom nav would just clutter it. Also hide before Privy
@@ -54,6 +60,11 @@ export function BottomNav() {
               key={tab.href}
               tab={tab}
               isActive={isActive}
+              pollitoSrc={
+                tab.icon === 'perfil'
+                  ? pollitoImage(pollito, 'lider')
+                  : undefined
+              }
             />
           );
         })}
@@ -62,7 +73,15 @@ export function BottomNav() {
   );
 }
 
-function NavTab({ tab, isActive }: { tab: Tab; isActive: boolean }) {
+function NavTab({
+  tab,
+  isActive,
+  pollitoSrc,
+}: {
+  tab: Tab;
+  isActive: boolean;
+  pollitoSrc?: string;
+}) {
   // Center "+" tab — bigger, filled gold, sits slightly above the bar on
   // mobile so it reads as the primary action.
   if (tab.icon === 'plus') {
@@ -89,7 +108,20 @@ function NavTab({ tab, isActive }: { tab: Tab; isActive: boolean }) {
       }`}
     >
       <span className="relative">
-        <TabIcon icon={tab.icon} active={isActive} />
+        {tab.icon === 'perfil' && pollitoSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={pollitoSrc}
+            alt=""
+            width={26}
+            height={26}
+            className={`rounded-full object-contain transition ${
+              isActive ? 'ring-2 ring-gold' : 'opacity-80'
+            }`}
+          />
+        ) : (
+          <TabIcon icon={tab.icon} active={isActive} />
+        )}
         {tab.hasNotification && (
           <span className="absolute -right-0.5 -top-0.5 inline-block h-2 w-2 rounded-full bg-red-alert ring-2 ring-bg-base" />
         )}
