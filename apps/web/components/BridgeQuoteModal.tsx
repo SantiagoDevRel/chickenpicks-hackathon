@@ -1,17 +1,27 @@
 'use client';
 
 // BridgeQuoteModal — visual surface for the voice agent's preview_bridge_quote
-// tool. When the agent quotes a bridge from chain X → Solana USDC, we open
-// this modal instead of the agent rambling raw numbers. Includes a single
-// "Use Solana USDC devnet" CTA that collapses the conversation back to the
-// happy path (we only support devnet today, so EVM bridges are aspirational).
+// tool. Shows REAL LI.FI quotes for several EVM mainnets bridging USDC into
+// Solana mainnet USDC, then collapses the demo back to "USDC on Solana
+// devnet" via a CTA at the bottom. Displays one row per source chain with
+// duration / fee / amount-out / provider — proves the LI.FI integration is
+// wired to live data, not a stub.
 
 import { useEffect } from 'react';
 import {
   useBridgeQuote,
   useSetBridgeQuote,
-  type BridgeQuoteData,
+  type BridgeQuoteRow,
 } from '@/lib/VoiceContext';
+
+const CHAIN_ICON: Record<string, string> = {
+  Polygon: '🟣',
+  Arbitrum: '🔵',
+  Base: '🟦',
+  Optimism: '🔴',
+  Ethereum: '⬛',
+  BSC: '🟡',
+};
 
 export function BridgeQuoteModal() {
   const state = useBridgeQuote();
@@ -27,7 +37,7 @@ export function BridgeQuoteModal() {
   }, [state.kind, setState]);
 
   if (state.kind !== 'open') return null;
-  const { data } = state;
+  const { amountUsdc, quotes, loading } = state;
 
   return (
     <div
@@ -35,61 +45,34 @@ export function BridgeQuoteModal() {
       onClick={() => setState({ kind: 'idle' })}
     >
       <div
-        className="lp-card-hero max-w-md w-full p-6 animate-slide-up"
+        className="lp-card-hero max-w-md w-full p-5 animate-slide-up max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 mb-4">
           <div className="text-3xl">🌉</div>
           <div className="flex-1">
             <h2 className="font-display tracking-[0.04em] text-xl text-gold uppercase leading-none">
-              Bridge quote
+              Bridge {amountUsdc} USDC → Solana
             </h2>
             <p className="text-[11px] text-text-muted mt-1">
-              Powered by LI.FI
+              Live LI.FI routes from EVM mainnets
             </p>
           </div>
         </div>
 
-        <div className="rounded-md bg-bg-base/60 border border-border-subtle p-3 mb-4 grid grid-cols-2 gap-3 text-center">
-          <div>
-            <div className="font-display tracking-[0.08em] text-[10px] text-text-muted">
-              FROM
-            </div>
-            <div className="font-display tracking-[0.04em] text-base text-text-primary uppercase">
-              {data.fromChain}
-            </div>
-            <div className="text-[11px] text-text-muted mt-0.5">
-              {data.amountUsdc} USDC
-            </div>
-          </div>
-          <div>
-            <div className="font-display tracking-[0.08em] text-[10px] text-text-muted">
-              TO
-            </div>
-            <div className="font-display tracking-[0.04em] text-base text-gold uppercase">
-              Solana
-            </div>
-            <div className="text-[11px] text-text-muted mt-0.5">
-              USDC (devnet)
-            </div>
-          </div>
-        </div>
+        {loading && (
+          <p className="text-text-muted text-xs font-display tracking-[0.08em] text-center py-6">
+            FETCHING QUOTES…
+          </p>
+        )}
 
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <QuoteStat
-            label="DURATION"
-            value={
-              data.durationSeconds != null
-                ? formatDuration(data.durationSeconds)
-                : '—'
-            }
-          />
-          <QuoteStat
-            label="FEE"
-            value={data.feeUsd != null ? `$${data.feeUsd.toFixed(2)}` : '—'}
-          />
-          <QuoteStat label="VIA" value={data.provider ?? '—'} />
-        </div>
+        {!loading && (
+          <div className="space-y-2 mb-4">
+            {quotes.map((q) => (
+              <QuoteRowCard key={q.chain_id} row={q} amountUsdc={amountUsdc} />
+            ))}
+          </div>
+        )}
 
         <div className="rounded-md bg-amber/10 border border-amber/30 px-3 py-2.5 mb-4">
           <p className="text-xs text-amber leading-snug">
@@ -113,52 +96,69 @@ export function BridgeQuoteModal() {
   );
 }
 
-function QuoteStat({ label, value }: { label: string; value: string }) {
+function QuoteRowCard({
+  row,
+  amountUsdc,
+}: {
+  row: BridgeQuoteRow;
+  amountUsdc: string;
+}) {
+  const icon = CHAIN_ICON[row.chain_label] ?? '⬡';
   return (
-    <div className="rounded-md border border-border-subtle bg-bg-base/40 p-2.5 text-center">
+    <div
+      className={`rounded-md border p-3 ${
+        row.ok
+          ? 'border-border-default bg-bg-base/40'
+          : 'border-border-subtle bg-bg-base/20 opacity-60'
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="text-lg">{icon}</span>
+        <span className="font-display tracking-[0.04em] text-sm text-text-primary uppercase flex-1">
+          {row.chain_label}
+        </span>
+        <span className="font-display tracking-[0.04em] text-xs text-gold">
+          {amountUsdc} USDC →{' '}
+          {row.to_amount_usdc != null
+            ? `${row.to_amount_usdc.toFixed(2)} SOL-USDC`
+            : '—'}
+        </span>
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <Stat label="DURATION" value={formatDuration(row.duration_seconds)} />
+        <Stat label="FEE" value={formatUsd(row.bridge_fee_usd)} />
+        <Stat label="VIA" value={row.route_provider ?? '—'} />
+      </div>
+      {!row.ok && row.error && (
+        <p className="mt-1.5 text-[10px] text-red-alert/80 truncate">
+          {row.error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-sm border border-border-subtle bg-bg-base/40 py-1.5">
       <div className="font-display tracking-[0.08em] text-[9px] text-text-muted">
         {label}
       </div>
-      <div className="font-display tracking-[0.04em] text-sm text-text-primary mt-0.5 truncate">
+      <div className="font-display tracking-[0.04em] text-xs text-text-primary truncate px-1">
         {value}
       </div>
     </div>
   );
 }
 
-function formatDuration(seconds: number): string {
+function formatDuration(seconds: number | null): string {
+  if (seconds == null) return '—';
   if (seconds < 60) return `${Math.round(seconds)}s`;
   if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
   return `${Math.round(seconds / 3600)}h`;
 }
 
-// Helper to map raw LI.FI quote payload → modal-friendly shape.
-// Keeps the modal dumb and the parsing logic in one place.
-export function buildBridgeQuoteData(
-  fromChainId: number,
-  fromChainLabel: string,
-  amountUsdc: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  raw: any,
-): BridgeQuoteData {
-  return {
-    fromChain: fromChainLabel,
-    fromChainId,
-    amountUsdc,
-    toChain: 'Solana',
-    toToken: 'USDC',
-    durationSeconds:
-      typeof raw?.estimated_duration_seconds === 'number'
-        ? raw.estimated_duration_seconds
-        : typeof raw?.estimate?.executionDuration === 'number'
-          ? raw.estimate.executionDuration
-          : null,
-    feeUsd:
-      typeof raw?.fee_usd === 'number'
-        ? raw.fee_usd
-        : typeof raw?.estimate?.feeCosts?.[0]?.amountUSD === 'string'
-          ? Number(raw.estimate.feeCosts[0].amountUSD)
-          : null,
-    provider: raw?.provider ?? raw?.toolDetails?.name ?? raw?.tool ?? null,
-  };
+function formatUsd(usd: number | null): string {
+  if (usd == null) return '—';
+  return `$${usd.toFixed(2)}`;
 }

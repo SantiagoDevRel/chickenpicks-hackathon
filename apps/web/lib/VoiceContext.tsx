@@ -44,21 +44,28 @@ export type VoiceCallbacks = {
 };
 
 // Bridge quote popup — when the voice agent's preview_bridge_quote tool
-// fires, we render this modal instead of (only) speaking. The CTA inside
-// the modal collapses the demo back to "Use Solana USDC devnet".
-export type BridgeQuoteData = {
-  fromChain: string;
-  fromChainId: number;
-  amountUsdc: string;
-  toChain: 'Solana';
-  toToken: 'USDC';
-  durationSeconds: number | null;
-  feeUsd: number | null;
-  provider: string | null;
+// fires, we render this modal showing live LI.FI quotes from several EVM
+// mainnets to Solana mainnet USDC. CTA collapses the demo back to
+// "Use Solana USDC devnet".
+export type BridgeQuoteRow = {
+  chain_id: number;
+  chain_label: string;
+  ok: boolean;
+  duration_seconds: number | null;
+  bridge_fee_usd: number | null;
+  gas_cost_usd: number | null;
+  route_provider: string | null;
+  to_amount_usdc: number | null;
+  error?: string;
 };
 export type BridgeQuoteState =
   | { kind: 'idle' }
-  | { kind: 'open'; data: BridgeQuoteData };
+  | {
+      kind: 'open';
+      amountUsdc: string;
+      quotes: BridgeQuoteRow[];
+      loading: boolean;
+    };
 
 type Ctx = {
   callbacks: VoiceCallbacks;

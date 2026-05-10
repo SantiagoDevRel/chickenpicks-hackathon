@@ -5,7 +5,6 @@ import { useConversation } from '@elevenlabs/react';
 import { useSolanaWallets } from '@privy-io/react-auth/solana';
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { useSetBridgeQuote } from '@/lib/VoiceContext';
-import { buildBridgeQuoteData } from './BridgeQuoteModal';
 import {
   getAccount,
   getAssociatedTokenAddressSync,
@@ -274,69 +273,64 @@ export function VoiceAgent({
       // story alive without needing to actually execute the bridge.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       preview_bridge_quote: async (params: any) => {
-        const chainNameToId: Record<string, { id: number; label: string }> = {
-          ethereum: { id: 1, label: 'Ethereum' },
-          eth: { id: 1, label: 'Ethereum' },
-          mainnet: { id: 1, label: 'Ethereum' },
-          polygon: { id: 137, label: 'Polygon' },
-          matic: { id: 137, label: 'Polygon' },
-          arbitrum: { id: 42161, label: 'Arbitrum' },
-          arb: { id: 42161, label: 'Arbitrum' },
-          optimism: { id: 10, label: 'Optimism' },
-          op: { id: 10, label: 'Optimism' },
-          base: { id: 8453, label: 'Base' },
-          bsc: { id: 56, label: 'BSC' },
-          bnb: { id: 56, label: 'BSC' },
-        };
-        const rawChain = (params?.from_chain ?? '')
-          .toString()
-          .toLowerCase()
-          .trim();
-        const chainEntry = chainNameToId[rawChain];
-        if (!chainEntry) {
-          return {
-            supported: false,
-            message: `Chain "${rawChain}" is not in our supported list yet.`,
-          };
-        }
+        // Always fan out to the multi-chain endpoint. Param `from_chain`
+        // is ignored on purpose — the popup shows ALL supported chains
+        // side-by-side (Polygon, Arbitrum, Base, Optimism) so the user
+        // sees the LI.FI integration in full. Bot just says "here are
+        // the available routes, but for the demo I can only accept USDC
+        // on Solana devnet" — numbers come from the popup, not the bot.
+        const amountStr = params?.amount?.toString() ?? '1000000';
+        const amountUsdcReadable = (() => {
+          const n = Number(amountStr);
+          if (!Number.isFinite(n)) return '1';
+          return (n / 1e6).toFixed(2);
+        })();
+        // Open the popup IMMEDIATELY with loading state so the user sees
+        // something instant — fetching 4 LI.FI quotes in parallel takes
+        // 2-5s typically.
+        setBridgeQuote({
+          kind: 'open',
+          amountUsdc: amountUsdcReadable,
+          quotes: [],
+          loading: true,
+        });
         try {
-          const res = await fetch('/api/lifi/quote', {
+          const res = await fetch('/api/lifi/quotes-all', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              from_chain: chainEntry.id,
-              amount: params?.amount?.toString(),
-            }),
+            body: JSON.stringify({ amount: amountStr }),
           });
           const data = await res.json();
-          // Open the bridge-quote popup with the LI.FI data + a CTA that
-          // collapses the convo back to "use Solana USDC devnet" for the
-          // demo. The agent should verbally confirm "right now we're only
-          // on Solana devnet" when it sees this tool succeed.
-          const amountUsdcReadable = (() => {
-            const raw = params?.amount?.toString() ?? '1000000';
-            const n = Number(raw);
-            if (!Number.isFinite(n)) return '1';
-            return (n / 1e6).toFixed(2);
-          })();
+          const quotes = Array.isArray(data?.quotes) ? data.quotes : [];
           setBridgeQuote({
             kind: 'open',
-            data: buildBridgeQuoteData(
-              chainEntry.id,
-              chainEntry.label,
-              amountUsdcReadable,
-              data,
-            ),
+            amountUsdc: amountUsdcReadable,
+            quotes,
+            loading: false,
           });
           return {
             success: true,
             popup_shown: true,
-            ...data,
+            quote_count: quotes.length,
             message:
-              "A bridge quote popup is now visible to the user. Tell them: 'Right now ChickenPicks is only on Solana devnet — the EVM bridge is read-only for the demo. Tap USE SOLANA USDC DEVNET to continue.' DO NOT apologize.",
+              "A popup with live LI.FI quotes is now visible to the user. Say one short sentence like: 'Here are the available bridge routes — for this demo I can only accept USDC on Solana devnet, so tap USE SOLANA USDC DEVNET to continue.' DO NOT read out the numbers, the user can see them. DO NOT apologize.",
           };
         } catch (e) {
-          return { success: false, supported: false, error: (e as Error).message };
+          // Keep the popup open but mark not-loading so the user sees
+          // empty state with the disclaimer + CTA.
+          setBridgeQuote({
+            kind: 'open',
+            amountUsdc: amountUsdcReadable,
+            quotes: [],
+            loading: false,
+          });
+          return {
+            success: false,
+            popup_shown: true,
+            error: (e as Error).message,
+            message:
+              'Quote fetch failed but the popup is open. Tell the user: "I couldn\'t reach LI.FI right now, but for the demo I can only accept USDC on Solana devnet — tap the button to continue."',
+          };
         }
       },
 
