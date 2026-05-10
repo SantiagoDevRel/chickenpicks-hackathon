@@ -82,7 +82,7 @@ export default function InicioPage() {
 
   if (ready && !authenticated) {
     return (
-      <main className="min-h-screen pb-20">
+      <main className="min-h-screen pb-28">
         <BrandHeader />
         <div className="mx-auto max-w-md px-4 pt-6 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -114,7 +114,7 @@ export default function InicioPage() {
   const previewAvisos = avisos.slice(0, 3);
 
   return (
-    <main className="min-h-screen pb-20">
+    <main className="min-h-screen pb-28">
       <BrandHeader />
 
       <div className="mx-auto max-w-2xl px-4 pt-4">

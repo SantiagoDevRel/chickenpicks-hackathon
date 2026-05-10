@@ -64,7 +64,7 @@ export default function AvisosPage() {
   }
 
   return (
-    <main className="min-h-screen pb-20">
+    <main className="min-h-screen pb-28">
       <BrandHeader />
 
       <div className="mx-auto max-w-2xl px-4 pt-4">

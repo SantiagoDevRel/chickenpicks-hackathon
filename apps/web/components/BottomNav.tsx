@@ -47,9 +47,11 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-default bg-bg-base/95 backdrop-blur-md safe-bottom md:static md:border-t-0 md:border-b md:bg-transparent md:backdrop-blur-none"
+      // Mobile + desktop: floating pill at the bottom, mirrors la-polla.
+      // Always fixed so users can hop screens regardless of viewport width.
+      className="fixed bottom-3 left-3 right-3 z-30 mx-auto max-w-md rounded-full border border-border-subtle bg-bg-base/95 backdrop-blur-md safe-bottom shadow-[0_8px_24px_-4px_rgba(0,0,0,0.55)]"
     >
-      <div className="mx-auto flex max-w-2xl items-stretch justify-around gap-1 px-3 py-2 md:max-w-5xl md:justify-center md:gap-6">
+      <div className="flex h-[64px] items-center px-2 sm:px-4">
         {TABS.map((tab) => {
           const isActive =
             tab.href === '/inicio'
@@ -82,16 +84,16 @@ function NavTab({
   isActive: boolean;
   pollitoSrc?: string;
 }) {
-  // Center "+" tab — bigger, filled gold, sits slightly above the bar on
-  // mobile so it reads as the primary action.
+  // Center "+" tab — bigger, filled gold, floats slightly above the bar so
+  // it reads as the primary action (matches la-polla).
   if (tab.icon === 'plus') {
     return (
       <Link
         href={tab.href}
         aria-label="Create new pool"
-        className="relative flex flex-1 items-center justify-center md:flex-none"
+        className="relative flex flex-1 items-center justify-center"
       >
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gold text-black shadow-[0_8px_24px_-4px_rgba(255,215,0,0.45)] ring-4 ring-bg-base transition hover:bg-amber md:h-11 md:w-11 md:ring-0">
+        <span className="absolute -top-3 flex h-12 w-12 items-center justify-center rounded-full bg-gold text-black shadow-[0_8px_24px_-4px_rgba(255,215,0,0.45)] ring-4 ring-bg-base transition hover:bg-amber active:scale-95">
           <PlusIcon />
         </span>
       </Link>
@@ -101,7 +103,7 @@ function NavTab({
   return (
     <Link
       href={tab.href}
-      className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-2 py-1.5 transition md:flex-none md:flex-row md:gap-2 md:px-3 md:py-2 ${
+      className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-2 py-1.5 transition ${
         isActive
           ? 'text-gold'
           : 'text-text-muted hover:text-text-secondary'
@@ -127,7 +129,7 @@ function NavTab({
         )}
       </span>
       <span
-        className={`font-display text-xs tracking-[0.06em] md:text-sm ${
+        className={`font-display text-[11px] tracking-[0.06em] ${
           isActive ? 'text-gold' : ''
         }`}
       >
