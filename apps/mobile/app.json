@@ -2,7 +2,7 @@
   "expo": {
     "name": "ChickenPicks OnChain",
     "slug": "chickenpicks-onchain",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "orientation": "portrait",
     "icon": "./assets/pollitos/pollito_capitan_lider.png",
     "scheme": "chickenpicks",
@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "app.chickenpicks.onchain",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/pollitos/pollito_capitan_lider.png",
         "backgroundColor": "#080C10"
