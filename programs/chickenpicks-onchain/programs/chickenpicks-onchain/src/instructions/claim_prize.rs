@@ -18,6 +18,10 @@ pub struct ClaimPrize<'info> {
     )]
     pub polla_vault: Account<'info, TokenAccount>,
 
+    // Boxed: with MAX_MATCHES=256 the Prediction struct is ~600 bytes and
+    // pushing it onto the BPF call frame stack alongside the other accounts
+    // overflows (saw "Access violation in stack frame 5"). Box moves the
+    // deserialized struct to the heap so the stack stays slim.
     #[account(
         mut,
         seeds = [PREDICTION_SEED, polla.key().as_ref(), predictor.key().as_ref()],
@@ -25,7 +29,7 @@ pub struct ClaimPrize<'info> {
         has_one = predictor @ ChickenPicksError::PredictorMismatch,
         constraint = prediction.polla == polla.key() @ ChickenPicksError::PredictionPollaMismatch,
     )]
-    pub prediction: Account<'info, Prediction>,
+    pub prediction: Box<Account<'info, Prediction>>,
 
     #[account(
         mut,
