@@ -78,8 +78,10 @@ function pickScoresFor(idx: number, numMatches: number): { home: number; away: n
   for (let i = 0; i < numMatches; i++) {
     out.push(flavor[i] ?? { home: -1, away: -1 });
   }
-  // Pad to 10 (the on-chain layout always sends 10).
-  while (out.length < 10) out.push({ home: -1, away: -1 });
+  // Pad to MAX_MATCHES (on-chain layout, currently 256). Pulled from a
+  // local constant to avoid coupling this script to the workspace shared lib.
+  const SCRIPT_MAX_MATCHES = 256;
+  while (out.length < SCRIPT_MAX_MATCHES) out.push({ home: -1, away: -1 });
   return out;
 }
 

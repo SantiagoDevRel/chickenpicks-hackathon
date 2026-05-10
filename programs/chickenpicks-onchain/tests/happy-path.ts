@@ -334,6 +334,6 @@ describe('chickenpicks-onchain — happy path', () => {
 
 function pad(scores: { home: number; away: number }[]): { home: number; away: number }[] {
   const out = [...scores];
-  while (out.length < 10) out.push({ home: -1, away: -1 });
+  while (out.length < 256) out.push({ home: -1, away: -1 });
   return out;
 }

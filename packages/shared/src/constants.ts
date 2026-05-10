@@ -23,7 +23,10 @@ export const SOL_DECIMALS = 9;
 
 // Program constants — must match Rust constants
 export const PLATFORM_FEE_BPS = 500;       // 5%
-export const MAX_MATCHES = 10;
+// Bump in lockstep with programs/chickenpicks-onchain/src/constants.rs.
+// 256 is the single-tx submit cap (512 bytes args, fits 1232 tx limit).
+// >256 needs chunked submit_prediction — handle in batches client-side.
+export const MAX_MATCHES = 256;
 export const MAX_PRIZE_TIERS = 10;
 export const UNSET_SCORE = -1;
 export const UNRANKED = 0xff;

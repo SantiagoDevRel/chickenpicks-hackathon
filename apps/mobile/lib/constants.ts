@@ -20,7 +20,8 @@ export const USDC_DECIMALS = 6;
 export const SOL_DECIMALS = 9;
 
 export const PLATFORM_FEE_BPS = 500;
-export const MAX_MATCHES = 10;
+// Bump in lockstep with programs/chickenpicks-onchain/src/constants.rs.
+export const MAX_MATCHES = 256;
 export const MAX_PRIZE_TIERS = 10;
 export const UNSET_SCORE = -1;
 export const UNRANKED = 0xff;

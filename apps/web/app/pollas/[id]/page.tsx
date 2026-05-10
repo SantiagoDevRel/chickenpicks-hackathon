@@ -18,6 +18,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { useSolanaWallets } from '@privy-io/react-auth/solana';
 import idl from '@chickenpicks/anchor-client/idl' with { type: 'json' };
 import {
+  MAX_MATCHES,
   PROGRAM_ID,
   SOLANA_RPC_URL,
   USDC_DECIMALS,
@@ -327,9 +328,9 @@ export default function PollaDetailPage() {
         programId,
       );
 
-      // Build full 10-element scores array; pad with -1 for unused slots
+      // Build full MAX_MATCHES-element scores array; pad with -1 for unused slots.
       const fullScores: { home: number; away: number }[] = [];
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < MAX_MATCHES; i++) {
         const s = scores[i];
         if (s && s.home !== '' && s.away !== '') {
           fullScores.push({ home: parseInt(s.home, 10), away: parseInt(s.away, 10) });
@@ -592,7 +593,7 @@ export default function PollaDetailPage() {
           programId,
         );
         const fullScores: { home: number; away: number }[] = [];
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < MAX_MATCHES; i++) {
           const p = proposed.find((pp) => pp.matchIndex === i);
           if (p) {
             fullScores.push({ home: p.homeScore, away: p.awayScore });

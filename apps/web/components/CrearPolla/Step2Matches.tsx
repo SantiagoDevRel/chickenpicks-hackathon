@@ -3,10 +3,10 @@
 // Step 2 — pick fixtures from the selected tournament.
 //
 // Calls /api/espn/fixtures?league=<slug>&from=YYYYMMDD&to=YYYYMMDD on mount.
-// Range is fixed at today → +365 days (the API caps at 60 in a single call,
-// so we paginate 6× under the hood). MAX_MATCHES (10) is the on-chain hard
-// cap from constants.rs — pollas are bounded so settle_polla can rank them
-// in a single tx without blowing the compute budget.
+// Range is fixed at today → +365 days (paginated under the hood).
+// MAX_MATCHES is the silent on-chain hard cap from constants.rs (256 — the
+// max scores array that fits in a single submit_prediction tx). UI never
+// surfaces the number to the user.
 
 import { useEffect, useMemo, useState } from 'react';
 import { MAX_MATCHES } from '@chickenpicks/shared';
@@ -18,7 +18,7 @@ import {
 import type { Fixture } from '@/lib/espn/fixtures';
 
 export type Step2Value = {
-  /** Fixture ids the user has selected. We enforce MAX_MATCHES (10). */
+  /** Fixture ids the user has selected. Silent cap at MAX_MATCHES. */
   selected: Fixture[];
 };
 
@@ -135,6 +135,16 @@ export function Step2Matches({
     }
   }
 
+  function selectAll() {
+    if (!fixtures) return;
+    const trimmed = fixtures.slice(0, MAX_MATCHES);
+    onChange({ selected: trimmed });
+  }
+
+  function clearAll() {
+    onChange({ selected: [] });
+  }
+
   const canContinue = value.selected.length >= 1;
 
   // Group fixtures by month for easier scanning of long lists (World Cup,
@@ -196,29 +206,38 @@ export function Step2Matches({
             <div className="font-display tracking-[0.08em] text-xs text-text-muted">
               PICKED
             </div>
-            <div
-              className={`font-display tracking-[0.04em] text-lg ${
-                value.selected.length >= MAX_MATCHES
-                  ? 'text-amber'
-                  : 'text-gold'
-              }`}
-            >
+            <div className="font-display tracking-[0.04em] text-lg text-gold">
               {value.selected.length}
-              <span className="text-text-muted text-sm">/{MAX_MATCHES}</span>
             </div>
           </div>
         </div>
-        <p className="mt-3 text-xs text-text-muted">
-          Pick up to {MAX_MATCHES} matches the pool will run on. The on-chain
-          program ranks every prediction in one transaction at settle time, so
-          we cap matches per pool to keep that single tx within Solana&apos;s
-          compute budget.
-        </p>
       </section>
 
       {/* Fixture list grouped by month */}
       <section className="lp-card p-5 sm:p-6">
-        <h2 className="lp-section-title mb-4">Upcoming matches</h2>
+        <div className="flex items-center justify-between mb-4 gap-2">
+          <h2 className="lp-section-title">Upcoming matches</h2>
+          {!loading && fixtures && fixtures.length > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={selectAll}
+                className="rounded-md border border-gold/40 bg-gold/10 px-3 py-1.5 font-display tracking-[0.06em] text-xs text-gold hover:bg-gold/20 transition"
+              >
+                SELECT ALL
+              </button>
+              {value.selected.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="rounded-md border border-border-default bg-bg-card/50 px-3 py-1.5 font-display tracking-[0.06em] text-xs text-text-muted hover:text-text-primary transition"
+                >
+                  CLEAR
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         {loading && (
           <p className="text-text-muted text-sm font-display tracking-[0.08em] text-center py-8">
@@ -268,11 +287,6 @@ export function Step2Matches({
           </div>
         )}
 
-        {value.selected.length >= MAX_MATCHES && (
-          <p className="mt-3 text-xs text-amber font-display tracking-[0.04em]">
-            Max {MAX_MATCHES} matches per pool. Deselect one to swap.
-          </p>
-        )}
       </section>
 
       {/* Footer CTAs */}

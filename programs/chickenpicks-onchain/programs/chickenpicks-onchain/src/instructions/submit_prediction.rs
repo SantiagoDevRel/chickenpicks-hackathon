@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::constants::PREDICTION_SEED;
+use crate::constants::{MAX_MATCHES, PREDICTION_SEED};
 use crate::errors::ChickenPicksError;
 use crate::state::{Polla, PollaStatus, Prediction, PredictionScore};
 
@@ -21,7 +21,7 @@ pub struct SubmitPrediction<'info> {
 
 pub fn handler(
     ctx: Context<SubmitPrediction>,
-    scores: [PredictionScore; 10],
+    scores: [PredictionScore; MAX_MATCHES],
 ) -> Result<()> {
     let polla = &ctx.accounts.polla;
     require!(polla.status == PollaStatus::Open, ChickenPicksError::PollaNotOpen);

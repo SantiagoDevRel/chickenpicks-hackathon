@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-use crate::constants::{PREDICTION_SEED, UNRANKED, UNSET_SCORE};
+use crate::constants::{MAX_MATCHES, PREDICTION_SEED, UNRANKED, UNSET_SCORE};
 use crate::errors::ChickenPicksError;
 use crate::state::{Polla, PollaStatus, Prediction, PredictionScore};
 
@@ -60,7 +60,7 @@ pub fn handler(ctx: Context<JoinPolla>) -> Result<()> {
     let prediction = &mut ctx.accounts.prediction;
     prediction.polla = polla.key();
     prediction.predictor = ctx.accounts.participant.key();
-    prediction.scores = [PredictionScore { home: UNSET_SCORE, away: UNSET_SCORE }; 10];
+    prediction.scores = [PredictionScore { home: UNSET_SCORE, away: UNSET_SCORE }; MAX_MATCHES];
     prediction.submitted_at_slot = 0;
     prediction.points = 0;
     prediction.final_rank = UNRANKED;

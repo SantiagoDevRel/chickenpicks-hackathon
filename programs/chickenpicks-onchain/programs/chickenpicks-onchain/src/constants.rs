@@ -1,8 +1,13 @@
 // Platform fee — 5%, locked at compile time. Cannot be changed by any instruction.
 pub const PLATFORM_FEE_BPS: u16 = 500;
 
-// Hard caps on per-polla scale. Tuned for hackathon demo size.
-pub const MAX_MATCHES: usize = 10;
+// MAX_MATCHES sets the on-chain `scores: [PredictionScore; MAX_MATCHES]`
+// array. 256 is the practical cap for a single-tx submit_prediction —
+// 256 * 2 = 512 bytes of args fits in Solana's 1232-byte tx limit with
+// room for accounts/signatures. Covers WC (104), Champions full season,
+// and most cup competitions. League seasons (Premier 380, La Liga 380)
+// would need a chunked submit (post-demo).
+pub const MAX_MATCHES: usize = 256;
 pub const MAX_PRIZE_TIERS: usize = 10;
 
 // PDA seed prefixes

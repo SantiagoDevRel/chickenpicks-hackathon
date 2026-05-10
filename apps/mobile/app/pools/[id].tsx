@@ -33,7 +33,7 @@ import {
   predictionPda,
   matchPda,
 } from '@/lib/anchor';
-import { USDC_MINT } from '@/lib/constants';
+import { MAX_MATCHES, USDC_MINT } from '@/lib/constants';
 import { formatUsdc, statusKey } from '@/lib/format';
 import { useWallet } from '@/lib/useWallet';
 import { MatchRow } from '@/components/MatchRow';
@@ -202,7 +202,7 @@ export default function PoolDetailScreen() {
       const [predPda] = predictionPda(pollaPubkey, userPubkey);
 
       const fullScores: { home: number; away: number }[] = [];
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < MAX_MATCHES; i++) {
         const s = scores[i];
         if (s && s.home !== '' && s.away !== '') {
           fullScores.push({ home: parseInt(s.home, 10), away: parseInt(s.away, 10) });

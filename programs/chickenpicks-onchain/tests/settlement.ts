@@ -181,6 +181,6 @@ describe('chickenpicks-onchain — settlement edge cases', () => {
 
 function pad(s: { home: number; away: number }): { home: number; away: number }[] {
   const out: { home: number; away: number }[] = [s];
-  while (out.length < 10) out.push({ home: -1, away: -1 });
+  while (out.length < 256) out.push({ home: -1, away: -1 });
   return out;
 }

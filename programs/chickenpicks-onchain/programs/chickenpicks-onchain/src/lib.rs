@@ -16,6 +16,7 @@ pub mod instructions;
 pub mod scoring;
 pub mod state;
 
+use constants::MAX_MATCHES;
 use instructions::*;
 use state::*;
 
@@ -65,7 +66,7 @@ pub mod chickenpicks_onchain {
 
     pub fn submit_prediction(
         ctx: Context<SubmitPrediction>,
-        scores: [PredictionScore; 10],
+        scores: [PredictionScore; MAX_MATCHES],
     ) -> Result<()> {
         instructions::submit_prediction::handler(ctx, scores)
     }
