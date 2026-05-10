@@ -16,6 +16,7 @@ import {
 } from '@coral-xyz/anchor';
 import idl from '@chickenpicks/anchor-client/idl' with { type: 'json' };
 import {
+  HIDDEN_POLLAS,
   PROGRAM_ID,
   SOLANA_RPC_URL,
   USDC_DECIMALS,
@@ -90,8 +91,9 @@ export function VoiceAgent({
     const configuredMint = new PublicKey(USDC_MINT);
     return accounts
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .filter(({ account }: { account: any }) =>
-        account.usdcMint.equals(configuredMint),
+      .filter(({ publicKey, account }: { publicKey: PublicKey; account: any }) =>
+        account.usdcMint.equals(configuredMint) &&
+        !HIDDEN_POLLAS.has(publicKey.toBase58()),
       )
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map(({ publicKey, account }: any) => ({

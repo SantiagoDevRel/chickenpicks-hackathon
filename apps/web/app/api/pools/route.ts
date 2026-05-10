@@ -20,7 +20,7 @@ import {
   type VersionedTransaction,
 } from '@solana/web3.js';
 import idl from '@chickenpicks/anchor-client/idl' with { type: 'json' };
-import { SOLANA_RPC_URL, USDC_MINT } from '@chickenpicks/shared';
+import { HIDDEN_POLLAS, SOLANA_RPC_URL, USDC_MINT } from '@chickenpicks/shared';
 
 // Anchor 0.31 stopped re-exporting Wallet from the barrel. Inline the
 // minimal wallet interface that AnchorProvider needs (publicKey + sign).
@@ -92,8 +92,9 @@ export async function GET() {
     const configuredMint = new PublicKey(USDC_MINT);
     const filtered = accs.filter(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ({ account }: { account: any }) =>
-        (account as RawPolla).usdcMint.equals(configuredMint),
+      ({ publicKey, account }: { publicKey: PublicKey; account: any }) =>
+        (account as RawPolla).usdcMint.equals(configuredMint) &&
+        !HIDDEN_POLLAS.has(publicKey.toBase58()),
     );
 
     const pools = filtered.map(

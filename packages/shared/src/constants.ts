@@ -40,3 +40,17 @@ export const VAULT_SEED = new TextEncoder().encode('vault');
 
 // Platform authority pubkey — set after solana-keygen, used to gate /admin UI
 export const PLATFORM_AUTHORITY = process.env.NEXT_PUBLIC_PLATFORM_AUTHORITY ?? '';
+
+// Pollas to hide from every UI surface (lists, voice agent's list_pools).
+// We can't delete a polla on-chain (no instruction), and partially-created
+// pollas (where add_match failed mid-loop) can't be settled either. We keep
+// them filtered out at the UI layer so they don't appear OPEN to users.
+//
+// Each entry should include a one-line reason so future cleanup knows what
+// happened. Entries can be removed once the on-chain row is truly gone
+// (e.g. after a future cancel_polla instruction).
+export const HIDDEN_POLLAS = new Set<string>([
+  // 2026-05-09: user ran out of SOL mid add_match loop (66/104 added);
+  // unsettleable because num_matches=104 != actual match accounts.
+  'FpYgD5XwMMpjKvZEcbwTPnUKeYfgpkZ3CppNZtjee6nq',
+]);

@@ -5,7 +5,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { AnchorProvider, Program, type Idl } from '@coral-xyz/anchor';
 import idl from '@chickenpicks/anchor-client/idl' with { type: 'json' };
-import { PROGRAM_ID, SOLANA_RPC_URL, USDC_MINT } from '@chickenpicks/shared';
+import { HIDDEN_POLLAS, PROGRAM_ID, SOLANA_RPC_URL, USDC_MINT } from '@chickenpicks/shared';
 import { BrandHeader } from '@/components/BrandHeader';
 
 const programId = new PublicKey(PROGRAM_ID);
@@ -72,8 +72,9 @@ export default function AdminPage() {
         const allPollas = await (program.account as any).polla.all();
         const configuredMint = new PublicKey(USDC_MINT);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const filtered = allPollas.filter(({ account }: any) =>
-          account.usdcMint.equals(configuredMint),
+        const filtered = allPollas.filter(({ publicKey, account }: any) =>
+          account.usdcMint.equals(configuredMint) &&
+          !HIDDEN_POLLAS.has(publicKey.toBase58()),
         );
 
         const result: PoolWithMatches[] = [];

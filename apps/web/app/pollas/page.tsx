@@ -17,6 +17,7 @@ import { AnchorProvider, BN, Program } from '@coral-xyz/anchor';
 import { Connection, PublicKey } from '@solana/web3.js';
 import idl from '@chickenpicks/anchor-client/idl' with { type: 'json' };
 import {
+  HIDDEN_POLLAS,
   SOLANA_RPC_URL,
   USDC_DECIMALS,
   USDC_MINT,
@@ -107,8 +108,9 @@ export default function PollasPage() {
         const configuredMint = new PublicKey(USDC_MINT);
         const filtered = accounts.filter(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ({ account }: { account: any }) =>
-            (account as RawPolla).usdcMint.equals(configuredMint),
+          ({ publicKey, account }: { publicKey: PublicKey; account: any }) =>
+            (account as RawPolla).usdcMint.equals(configuredMint) &&
+            !HIDDEN_POLLAS.has(publicKey.toBase58()),
         );
 
         const cards: PollaCard[] = filtered.map(
