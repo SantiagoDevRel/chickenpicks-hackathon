@@ -47,7 +47,7 @@ type PoolWithMatches = {
 };
 
 export default function AdminPage() {
-  const { authenticated, ready, user } = usePrivy();
+  const { authenticated, ready, user, getAccessToken } = usePrivy();
   const email = user?.email?.address ?? null;
 
   const [pools, setPools] = useState<PoolWithMatches[]>([]);
@@ -137,9 +137,14 @@ export default function AdminPage() {
     setBusy(`post-${pollaPubkey}-${matchIndex}`);
     setError(null);
     try {
+      const token = await getAccessToken();
+      if (!token) throw new Error('Not authenticated — please sign in again.');
       const res = await fetch('/api/admin/post-result', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-admin-email': email },
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ pollaPubkey, matchIndex, homeScore, awayScore }),
       });
       const j = await res.json();
@@ -158,9 +163,14 @@ export default function AdminPage() {
     setBusy(`settle-${pollaPubkey}`);
     setError(null);
     try {
+      const token = await getAccessToken();
+      if (!token) throw new Error('Not authenticated — please sign in again.');
       const res = await fetch('/api/admin/settle', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-admin-email': email },
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ pollaPubkey }),
       });
       const j = await res.json();

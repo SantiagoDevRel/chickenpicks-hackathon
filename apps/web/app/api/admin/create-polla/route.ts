@@ -17,12 +17,12 @@
 //   - The wizard at apps/web/app/crear/page.tsx does NOT call this route.
 //   - This route returns 501 Not Implemented to make accidental usage obvious.
 //
-// X-Admin-Email auth pattern mirrors /api/admin/post-result and /api/admin/settle.
-// When/if we wire it for real, replace `getAdminProgram()` calls below with the
-// same pattern as those routes.
+// Auth pattern mirrors /api/admin/post-result and /api/admin/settle:
+// requires `Authorization: Bearer <privy_access_token>` and the verified
+// user's email must be in ADMIN_EMAILS. See lib/auth/require-admin.ts.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { isAdminEmail } from '@/lib/server-admin';
+import { requireAdmin } from '@/lib/auth/require-admin';
 
 type CreatePollaBody = {
   /** UTF-8 string, max 32 bytes — server pads to [u8; 32]. */
@@ -40,13 +40,8 @@ type CreatePollaBody = {
 };
 
 export async function POST(req: NextRequest) {
-  const adminEmail = req.headers.get('x-admin-email');
-  if (!isAdminEmail(adminEmail)) {
-    return NextResponse.json(
-      { error: 'Not authorized — admin email mismatch.' },
-      { status: 403 },
-    );
-  }
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return auth.response;
 
   let body: CreatePollaBody;
   try {

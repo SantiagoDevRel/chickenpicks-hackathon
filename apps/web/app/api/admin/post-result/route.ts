@@ -3,23 +3,18 @@
 // Calls set_match_result with the deployer keypair (platform authority).
 // Returns { sig } on success.
 //
-// WARNING: this trusts the caller to be admin. The Privy server SDK could
-// verify the bearer token and pull the email; for hackathon scope we trust
-// a single header X-Admin-Email matched against ADMIN_EMAILS allowlist.
-// Replace with privy.verifyAuthToken() pre-deploy.
+// Auth: requires `Authorization: Bearer <privy_access_token>`. Verified
+// server-side via @privy-io/server-auth, then the resolved user's email is
+// checked against the ADMIN_EMAILS allowlist. See lib/auth/require-admin.ts.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PublicKey } from '@solana/web3.js';
-import { getAdminProgram, isAdminEmail } from '@/lib/server-admin';
+import { getAdminProgram } from '@/lib/server-admin';
+import { requireAdmin } from '@/lib/auth/require-admin';
 
 export async function POST(req: NextRequest) {
-  const adminEmail = req.headers.get('x-admin-email');
-  if (!isAdminEmail(adminEmail)) {
-    return NextResponse.json(
-      { error: 'Not authorized — admin email mismatch.' },
-      { status: 403 },
-    );
-  }
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return auth.response;
 
   let body: {
     pollaPubkey: string;
