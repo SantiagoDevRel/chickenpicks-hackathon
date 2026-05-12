@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 use crate::constants::{
@@ -33,11 +34,14 @@ pub struct SettlePolla<'info> {
     )]
     pub polla_vault: Account<'info, TokenAccount>,
 
-    /// Treasury USDC ATA — must be owned by platform.treasury.
+    /// Treasury USDC ATA — canonical Associated Token Account of
+    /// (polla.usdc_mint, platform.treasury). Anchor verifies the address
+    /// derivation, so a sibling token account owned by the treasury cannot
+    /// be substituted.
     #[account(
         mut,
-        constraint = treasury_usdc_ata.mint == polla.usdc_mint,
-        constraint = treasury_usdc_ata.owner == platform.treasury @ ChickenPicksError::UnauthorizedAuthority,
+        associated_token::mint = polla.usdc_mint,
+        associated_token::authority = platform.treasury,
     )]
     pub treasury_usdc_ata: Account<'info, TokenAccount>,
 
@@ -46,6 +50,7 @@ pub struct SettlePolla<'info> {
     pub caller: Signer<'info>,
 
     pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 pub fn handler<'info>(

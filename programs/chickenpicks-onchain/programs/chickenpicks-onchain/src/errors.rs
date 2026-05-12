@@ -64,4 +64,10 @@ pub enum ChickenPicksError {
 
     #[msg("Numerical overflow")]
     NumericalOverflow,
+
+    #[msg("Match score out of allowed bounds (0..=30)")]
+    InvalidMatchScore,
+
+    #[msg("USDC mint does not match the pinned EXPECTED_USDC_MINT for this network")]
+    InvalidUsdcMint,
 }

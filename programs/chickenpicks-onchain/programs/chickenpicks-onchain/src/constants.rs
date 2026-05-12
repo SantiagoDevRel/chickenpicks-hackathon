@@ -1,5 +1,12 @@
+use anchor_lang::prelude::{pubkey, Pubkey};
+
 // Platform fee — 5%, locked at compile time. Cannot be changed by any instruction.
 pub const PLATFORM_FEE_BPS: u16 = 500;
+
+// Pinned USDC mint for the active network (devnet). Pollas may only be created
+// against this mint — prevents an attacker from registering a fake "USDC" polla
+// using a mint they control.
+pub const EXPECTED_USDC_MINT: Pubkey = pubkey!("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
 
 // MAX_MATCHES sets the on-chain `scores: [PredictionScore; MAX_MATCHES]`
 // array. 256 is the practical cap for a single-tx submit_prediction —

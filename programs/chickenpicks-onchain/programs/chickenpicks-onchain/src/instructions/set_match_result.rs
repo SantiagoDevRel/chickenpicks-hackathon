@@ -35,8 +35,8 @@ pub fn handler(
     away_score: i8,
 ) -> Result<()> {
     require!(
-        home_score >= 0 && away_score >= 0,
-        ChickenPicksError::MatchIndexOutOfRange
+        home_score >= 0 && away_score >= 0 && home_score <= 30 && away_score <= 30,
+        ChickenPicksError::InvalidMatchScore
     );
 
     let polla = &mut ctx.accounts.polla;

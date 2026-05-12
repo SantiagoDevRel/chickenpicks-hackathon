@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
-use crate::constants::{MAX_MATCHES, MAX_PRIZE_TIERS, POLLA_SEED};
+use crate::constants::{EXPECTED_USDC_MINT, MAX_MATCHES, MAX_PRIZE_TIERS, POLLA_SEED};
 use crate::errors::ChickenPicksError;
 use crate::state::{Polla, PollaStatus};
 
@@ -18,7 +18,10 @@ pub struct CreatePolla<'info> {
     )]
     pub polla: Account<'info, Polla>,
 
-    /// USDC mint for entry payments. Pinned per network in .env / constants.ts.
+    /// USDC mint for entry payments. Pinned on-chain via EXPECTED_USDC_MINT.
+    #[account(
+        constraint = usdc_mint.key() == EXPECTED_USDC_MINT @ ChickenPicksError::InvalidUsdcMint
+    )]
     pub usdc_mint: Account<'info, Mint>,
 
     /// Vault — token account owned by the Polla PDA, holds entry USDC.
